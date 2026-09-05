@@ -1,0 +1,4 @@
+interface:
+  display_name: "Java Engineering"
+  short_description: "Build and review repository-compatible Java code"
+  default_prompt: "Use $java-engineering for the Java and JVM parts of this task."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "TypeScript Engineering"
+  short_description: "Build and review contract-safe TypeScript code"
+  default_prompt: "Use $typescript-engineering for the TypeScript components in this task."

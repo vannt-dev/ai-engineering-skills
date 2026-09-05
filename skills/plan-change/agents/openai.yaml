@@ -1,0 +1,4 @@
+interface:
+  display_name: "Plan Change"
+  short_description: "Create implementation-ready engineering plans"
+  default_prompt: "Use $plan-change to produce an implementation-ready plan for this approved requirement."

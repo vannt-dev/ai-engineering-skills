@@ -1,0 +1,4 @@
+interface:
+  display_name: "Debug Issue"
+  short_description: "Trace symptoms to an evidence-backed root cause"
+  default_prompt: "Use $debug-issue to diagnose this failure and identify its supported root cause."

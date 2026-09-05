@@ -1,0 +1,4 @@
+interface:
+  display_name: ".NET Engineering"
+  short_description: "Build and review repository-compatible .NET code"
+  default_prompt: "Use $dotnet-engineering for the C# and .NET parts of this task."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Python Engineering"
+  short_description: "Build and review repository-compatible Python code"
+  default_prompt: "Use $python-engineering for the Python components affected by this task."

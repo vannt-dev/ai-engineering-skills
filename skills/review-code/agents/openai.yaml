@@ -1,0 +1,4 @@
+interface:
+  display_name: "Review Code"
+  short_description: "Find material defects across technology stacks"
+  default_prompt: "Use $review-code to review these changes for material defects and missing tests."

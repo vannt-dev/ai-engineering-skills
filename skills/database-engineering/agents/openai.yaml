@@ -1,0 +1,4 @@
+interface:
+  display_name: "Database Engineering"
+  short_description: "Design and review safe relational data changes"
+  default_prompt: "Use $database-engineering to review the SQL, schema, and transaction aspects of this task."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Go Engineering"
+  short_description: "Build and review repository-compatible Go code"
+  default_prompt: "Use $go-engineering for the Go components affected by this task."

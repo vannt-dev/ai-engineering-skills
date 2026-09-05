@@ -1,0 +1,4 @@
+interface:
+  display_name: "Test Change"
+  short_description: "Design and implement behavior-focused tests"
+  default_prompt: "Use $test-change to design or add focused regression coverage for this change."

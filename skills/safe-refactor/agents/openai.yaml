@@ -1,0 +1,4 @@
+interface:
+  display_name: "Safe Refactor"
+  short_description: "Refactor with dependency and contract protection"
+  default_prompt: "Use $safe-refactor to restructure this code while preserving observable behavior."

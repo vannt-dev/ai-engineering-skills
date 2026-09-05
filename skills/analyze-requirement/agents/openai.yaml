@@ -1,0 +1,4 @@
+interface:
+  display_name: "Analyze Requirement"
+  short_description: "Turn raw requests into evidence-backed specs"
+  default_prompt: "Use $analyze-requirement to turn this request into a testable software specification."
