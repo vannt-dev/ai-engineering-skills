@@ -1,9 +1,10 @@
 {
-  "schemaVersion": 1,
-  "version": "0.1.0",
+  "schemaVersion": 2,
+  "version": "0.2.0",
   "skills": [
     { "name": "analyze-requirement", "category": "workflow" },
     { "name": "plan-change", "category": "workflow" },
+    { "name": "implement-change", "category": "workflow" },
     { "name": "review-code", "category": "workflow" },
     { "name": "test-change", "category": "workflow" },
     { "name": "debug-issue", "category": "workflow" },

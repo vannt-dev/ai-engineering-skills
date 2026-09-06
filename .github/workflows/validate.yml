@@ -1,0 +1,24 @@
+name: Validate skills
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate collection
+        shell: pwsh
+        run: ./scripts/validate-skills.ps1
+      - name: Test installer tooling
+        shell: pwsh
+        run: ./scripts/test-tooling.ps1
+

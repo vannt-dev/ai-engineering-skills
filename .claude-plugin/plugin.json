@@ -1,0 +1,13 @@
+{
+  "name": "ai-engineering-skills",
+  "version": "0.2.0",
+  "description": "Portable software-engineering workflows and stack guidance for polyglot projects.",
+  "author": {
+    "name": "vannt-dev",
+    "url": "https://github.com/vannt-dev"
+  },
+  "homepage": "https://github.com/vannt-dev/ai-engineering-skills",
+  "repository": "https://github.com/vannt-dev/ai-engineering-skills",
+  "keywords": ["engineering", "polyglot", "review", "testing", "refactoring"]
+}
+
