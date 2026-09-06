@@ -1,4 +1,6 @@
-# Handoff triển khai multi-agent skills v0.2.0
+# Handoff triển khai multi-agent skills v0.2.0 (Archived)
+
+> **Trạng thái: đã hoàn tất và archived.** Tài liệu này là note bàn giao gốc, giữ lại để tham khảo lịch sử thiết kế. Toàn bộ hạng mục "chưa hoàn tất" liệt kê bên dưới đã được triển khai và commit vào `main` (`991c416`, 2026-09-06). Xem `CHANGELOG.md` cho trạng thái hiện hành.
 
 Ngày ghi nhận: 2026-09-05
 

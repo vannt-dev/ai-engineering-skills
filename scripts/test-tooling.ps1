@@ -184,6 +184,66 @@ try {
         Assert-True (-not (Test-Path -LiteralPath $userHome)) "Target directory not created during WhatIf"
     }
 
+    # Test 9: Direct Codex target installs only to .agents/skills
+    Run-Test "Codex User target installs only to .agents/skills" {
+        $userHome = Join-Path $testRoot "user-codex"
+        & $installScript -Target Codex -Scope User -UserHome $userHome
+
+        $agentsSkills = Join-Path $userHome ".agents\skills"
+        Assert-Equal 13 (Get-ChildItem -LiteralPath $agentsSkills -Directory).Count "13 skills in Codex .agents/skills"
+        Assert-True (-not (Test-Path (Join-Path $userHome ".claude"))) ".claude not created for Codex target"
+        Assert-True (-not (Test-Path (Join-Path $userHome ".gemini"))) ".gemini not created for Codex target"
+    }
+
+    # Test 10: Direct OpenCode target installs only to .opencode/skills
+    Run-Test "OpenCode Project target installs to .opencode/skills" {
+        $projRoot = Join-Path $testRoot "project-opencode"
+        New-Item -ItemType Directory -Path $projRoot -Force | Out-Null
+        & $installScript -Target OpenCode -Scope Project -ProjectRoot $projRoot
+
+        $opencodeSkills = Join-Path $projRoot ".opencode\skills"
+        Assert-Equal 13 (Get-ChildItem -LiteralPath $opencodeSkills -Directory).Count "13 skills in .opencode/skills"
+        Assert-True (-not (Test-Path (Join-Path $projRoot ".agents"))) ".agents not created for OpenCode target"
+    }
+
+    # Test 11: -Overwrite at User scope removes stale files
+    Run-Test "Installer with -Overwrite at User scope removes stale files" {
+        $userHome = Join-Path $testRoot "user-stale"
+        & $installScript -Target Universal -Scope User -UserHome $userHome
+
+        $staleFile = Join-Path $userHome ".agents\skills\analyze-requirement\stale.txt"
+        Set-Content -LiteralPath $staleFile -Value "stale"
+        Assert-True (Test-Path -LiteralPath $staleFile) "Stale file created at User scope"
+
+        & $installScript -Target Universal -Scope User -UserHome $userHome -Overwrite
+        Assert-True (-not (Test-Path -LiteralPath $staleFile)) "Stale file removed at User scope"
+    }
+
+    # Test 12: Missing ProjectRoot throws before making changes
+    Run-Test "Installer throws when Scope=Project without ProjectRoot" {
+        $failed = $false
+        try {
+            & $installScript -Target Codex -Scope Project
+        } catch {
+            $failed = $true
+            Assert-True ($_.Exception.Message -match "ProjectRoot is required") "Error mentions ProjectRoot requirement"
+        }
+        Assert-True $failed "Installer threw for missing ProjectRoot"
+    }
+
+    # Test 13: Nonexistent ProjectRoot throws before making changes
+    Run-Test "Installer throws when ProjectRoot does not exist" {
+        $nonExistentRoot = Join-Path $testRoot "does-not-exist-root"
+        $failed = $false
+        try {
+            & $installScript -Target Codex -Scope Project -ProjectRoot $nonExistentRoot
+        } catch {
+            $failed = $true
+            Assert-True ($_.Exception.Message -match "does not exist") "Error mentions missing ProjectRoot directory"
+        }
+        Assert-True $failed "Installer threw for nonexistent ProjectRoot"
+    }
+
     Write-Host "`nAll $passCount/$testCount tests passed successfully!" -ForegroundColor Green
 }
 finally {

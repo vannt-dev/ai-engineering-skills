@@ -126,9 +126,11 @@ function Test-MarkdownLinks {
         [System.Collections.Generic.List[string]]$ErrorsList
     )
     $content = Get-Content -LiteralPath $FilePath -Raw
+    $contentNoCode = [regex]::Replace($content, '(?s)```.*?```', '')
+    $contentNoCode = [regex]::Replace($contentNoCode, '`[^`\r\n]*`', '')
     $fileDir = Split-Path -Parent $FilePath
     $pattern = '\[([^\]]+)\]\(([^)]+)\)'
-    $matches = [regex]::Matches($content, $pattern)
+    $matches = [regex]::Matches($contentNoCode, $pattern)
     foreach ($m in $matches) {
         $target = $m.Groups[2].Value.Trim()
         if ($target -match '^(?:[a-zA-Z][a-zA-Z0-9+.-]*:|\/\/)' -or $target.StartsWith('#') -or $target.StartsWith('mailto:')) {

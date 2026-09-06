@@ -1,5 +1,7 @@
 # AI Engineering Skills
 
+[![Validate skills](https://github.com/vannt-dev/ai-engineering-skills/actions/workflows/validate.yml/badge.svg)](https://github.com/vannt-dev/ai-engineering-skills/actions/workflows/validate.yml)
+
 A portable collection of software-engineering skills for Codex, Claude Code, OpenCode, and Google Antigravity.
 
 The collection has one canonical source under `skills/`:
@@ -99,3 +101,7 @@ Do not copy repository architecture or business rules into these shared skills. 
 - architecture and dependency boundaries;
 - security and data-handling constraints;
 - mutation and publication approval rules.
+
+## Contributing
+
+See `CONTRIBUTING.md` for how to add or change a skill, and `CHANGELOG.md` for release history.
