@@ -1,0 +1,4 @@
+interface:
+  display_name: "Dart Engineering"
+  short_description: "Implement, review, and test Dart/Flutter code with repo-compatible practices"
+  default_prompt: "Use $dart-engineering for this Dart or Flutter change."

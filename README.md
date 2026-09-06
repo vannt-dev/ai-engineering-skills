@@ -33,6 +33,7 @@ Stack skills:
 - `python-engineering`
 - `typescript-engineering`
 - `database-engineering`
+- `dart-engineering`
 
 In a polyglot repository, use the workflow skill that matches the task together with every stack skill relevant to the affected components. Project instructions override generic defaults.
 

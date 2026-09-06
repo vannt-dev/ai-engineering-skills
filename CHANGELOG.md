@@ -7,6 +7,10 @@ Versioning follows semver against `skillset.json`'s `version` field:
 - **minor** — new skill added, or new optional metadata/target support.
 - **major** — breaking change to `skillset.json` schema, canonical frontmatter, or install layout.
 
+## 0.4.0 — 2026-09-06
+
+- Added the `dart-engineering` stack skill: null-safety soundness, Flutter widget lifecycle and disposal, `BuildContext`-across-`await` safety, generated-file handling, and platform-channel contract guidance.
+
 ## 0.3.0 — 2026-09-06
 
 - Added the `checkpoint-progress` workflow skill: teaches any agent to check for an existing handoff note before resuming multi-session work, and to write a structured, platform-agnostic one (`docs/handoff/<topic>-<date>.md`) before a session ends with work in flight, runs low on context, or hands off to a different agent or tool.

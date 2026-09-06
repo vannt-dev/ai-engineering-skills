@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "version": "0.3.0",
+  "version": "0.4.0",
   "skills": [
     { "name": "analyze-requirement", "category": "workflow" },
     { "name": "plan-change", "category": "workflow" },
@@ -15,6 +15,7 @@
     { "name": "go-engineering", "category": "stack" },
     { "name": "python-engineering", "category": "stack" },
     { "name": "typescript-engineering", "category": "stack" },
-    { "name": "database-engineering", "category": "stack" }
+    { "name": "database-engineering", "category": "stack" },
+    { "name": "dart-engineering", "category": "stack" }
   ]
 }
