@@ -5,8 +5,11 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 $scriptsDir = $PSScriptRoot
+$collectionRoot = Split-Path -Parent $scriptsDir
 $validateScript = Join-Path $scriptsDir "validate-skills.ps1"
 $installScript = Join-Path $scriptsDir "install-skills.ps1"
+$manifest = Get-Content -LiteralPath (Join-Path $collectionRoot "skillset.json") -Raw | ConvertFrom-Json
+$expectedSkillCount = @($manifest.skills).Count
 
 function Assert-True([bool]$Condition, [string]$Message) {
     if (-not $Condition) {
@@ -73,22 +76,22 @@ try {
         # 1. Canonical .agents/skills
         $agentsSkills = Join-Path $userHome ".agents\skills"
         $agentDirs = @(Get-ChildItem -LiteralPath $agentsSkills -Directory | Select-Object -ExpandProperty Name)
-        Assert-Equal 13 $agentDirs.Count "13 canonical skills in .agents/skills"
+        Assert-Equal $expectedSkillCount $agentDirs.Count "$expectedSkillCount canonical skills in .agents/skills"
         $agentReceiptPath = Join-Path $agentsSkills ".ai-engineering-skills.receipt.json"
         Assert-True (Test-Path -LiteralPath $agentReceiptPath) ".agents/skills receipt exists"
         $agentReceipt = Get-Content -LiteralPath $agentReceiptPath -Raw | ConvertFrom-Json
-        Assert-Equal "0.2.0" $agentReceipt.version "Receipt version matches 0.2.0"
+        Assert-Equal $manifest.version $agentReceipt.version "Receipt version matches $($manifest.version)"
         Assert-Equal "ai-engineering-skills" $agentReceipt.collection "Receipt collection matches"
-        Assert-Equal 13 $agentReceipt.skills.Count "Receipt has 13 skills"
+        Assert-Equal $expectedSkillCount $agentReceipt.skills.Count "Receipt has $expectedSkillCount skills"
 
         # 2. Antigravity user global
         $geminiSkills = Join-Path $userHome ".gemini\antigravity\skills"
         $geminiDirs = @(Get-ChildItem -LiteralPath $geminiSkills -Directory | Select-Object -ExpandProperty Name)
-        Assert-Equal 13 $geminiDirs.Count "13 canonical skills in .gemini/antigravity/skills"
+        Assert-Equal $expectedSkillCount $geminiDirs.Count "$expectedSkillCount canonical skills in .gemini/antigravity/skills"
         $geminiReceiptPath = Join-Path $geminiSkills ".ai-engineering-skills.receipt.json"
         Assert-True (Test-Path -LiteralPath $geminiReceiptPath) ".gemini receipt exists"
         $geminiReceipt = Get-Content -LiteralPath $geminiReceiptPath -Raw | ConvertFrom-Json
-        Assert-Equal "0.2.0" $geminiReceipt.version "Gemini receipt version matches 0.2.0"
+        Assert-Equal $manifest.version $geminiReceipt.version "Gemini receipt version matches $($manifest.version)"
 
         # 3. Claude nested plugin
         $claudePlugin = Join-Path $userHome ".claude\skills\ai-engineering-skills"
@@ -96,7 +99,7 @@ try {
         Assert-True (Test-Path -LiteralPath (Join-Path $claudePlugin ".claude-plugin\plugin.json")) "Claude plugin.json exists"
         $claudeSkills = Join-Path $claudePlugin "skills"
         $claudeDirs = @(Get-ChildItem -LiteralPath $claudeSkills -Directory | Select-Object -ExpandProperty Name)
-        Assert-Equal 13 $claudeDirs.Count "13 skills inside Claude plugin"
+        Assert-Equal $expectedSkillCount $claudeDirs.Count "$expectedSkillCount skills inside Claude plugin"
 
         # Check no SKILL.md directly under plugin root (avoids OpenCode duplicate discovery)
         Assert-True (-not (Test-Path (Join-Path $claudePlugin "SKILL.md"))) "No SKILL.md in plugin root"
@@ -105,7 +108,7 @@ try {
         $claudeReceiptPath = Join-Path $claudePlugin ".ai-engineering-skills.receipt.json"
         Assert-True (Test-Path -LiteralPath $claudeReceiptPath) "Claude plugin receipt exists"
         $claudeReceipt = Get-Content -LiteralPath $claudeReceiptPath -Raw | ConvertFrom-Json
-        Assert-Equal "0.2.0" $claudeReceipt.version "Claude receipt version matches 0.2.0"
+        Assert-Equal $manifest.version $claudeReceipt.version "Claude receipt version matches $($manifest.version)"
     }
 
     # Test 4: Antigravity User Single Target
@@ -115,7 +118,7 @@ try {
 
         $geminiSkills = Join-Path $userHome ".gemini\antigravity\skills"
         Assert-True (Test-Path -LiteralPath $geminiSkills) ".gemini skills exists"
-        Assert-Equal 13 (Get-ChildItem -LiteralPath $geminiSkills -Directory).Count "13 skills in Antigravity"
+        Assert-Equal $expectedSkillCount (Get-ChildItem -LiteralPath $geminiSkills -Directory).Count "$expectedSkillCount skills in Antigravity"
         Assert-True (-not (Test-Path (Join-Path $userHome ".agents"))) ".agents was not created"
         Assert-True (-not (Test-Path (Join-Path $userHome ".claude"))) ".claude was not created"
     }
@@ -127,12 +130,12 @@ try {
         & $installScript -Target Universal -Scope Project -ProjectRoot $projRoot
 
         $projAgents = Join-Path $projRoot ".agents\skills"
-        Assert-Equal 13 (Get-ChildItem -LiteralPath $projAgents -Directory).Count "13 skills in project .agents/skills"
+        Assert-Equal $expectedSkillCount (Get-ChildItem -LiteralPath $projAgents -Directory).Count "$expectedSkillCount skills in project .agents/skills"
         Assert-True (Test-Path (Join-Path $projAgents ".ai-engineering-skills.receipt.json")) "Project .agents receipt exists"
 
         $projClaude = Join-Path $projRoot ".claude\skills\ai-engineering-skills"
         Assert-True (Test-Path (Join-Path $projClaude ".claude-plugin\plugin.json")) "Project Claude manifest exists"
-        Assert-Equal 13 (Get-ChildItem -LiteralPath (Join-Path $projClaude "skills") -Directory).Count "13 skills in project Claude plugin"
+        Assert-Equal $expectedSkillCount (Get-ChildItem -LiteralPath (Join-Path $projClaude "skills") -Directory).Count "$expectedSkillCount skills in project Claude plugin"
         Assert-True (Test-Path (Join-Path $projClaude ".ai-engineering-skills.receipt.json")) "Project Claude receipt exists"
 
         Assert-True (-not (Test-Path (Join-Path $projRoot ".gemini"))) "No .gemini created in project scope"
@@ -190,7 +193,7 @@ try {
         & $installScript -Target Codex -Scope User -UserHome $userHome
 
         $agentsSkills = Join-Path $userHome ".agents\skills"
-        Assert-Equal 13 (Get-ChildItem -LiteralPath $agentsSkills -Directory).Count "13 skills in Codex .agents/skills"
+        Assert-Equal $expectedSkillCount (Get-ChildItem -LiteralPath $agentsSkills -Directory).Count "$expectedSkillCount skills in Codex .agents/skills"
         Assert-True (-not (Test-Path (Join-Path $userHome ".claude"))) ".claude not created for Codex target"
         Assert-True (-not (Test-Path (Join-Path $userHome ".gemini"))) ".gemini not created for Codex target"
     }
@@ -202,7 +205,7 @@ try {
         & $installScript -Target OpenCode -Scope Project -ProjectRoot $projRoot
 
         $opencodeSkills = Join-Path $projRoot ".opencode\skills"
-        Assert-Equal 13 (Get-ChildItem -LiteralPath $opencodeSkills -Directory).Count "13 skills in .opencode/skills"
+        Assert-Equal $expectedSkillCount (Get-ChildItem -LiteralPath $opencodeSkills -Directory).Count "$expectedSkillCount skills in .opencode/skills"
         Assert-True (-not (Test-Path (Join-Path $projRoot ".agents"))) ".agents not created for OpenCode target"
     }
 

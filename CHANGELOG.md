@@ -7,6 +7,10 @@ Versioning follows semver against `skillset.json`'s `version` field:
 - **minor** — new skill added, or new optional metadata/target support.
 - **major** — breaking change to `skillset.json` schema, canonical frontmatter, or install layout.
 
+## 0.3.0 — 2026-09-06
+
+- Added the `checkpoint-progress` workflow skill: teaches any agent to check for an existing handoff note before resuming multi-session work, and to write a structured, platform-agnostic one (`docs/handoff/<topic>-<date>.md`) before a session ends with work in flight, runs low on context, or hands off to a different agent or tool.
+
 ## 0.2.0 — 2026-09-06
 
 - Rewrote `scripts/install-skills.ps1`: preflight collision detection across all planned destinations before any copy, `-Overwrite` now replaces managed skill directories wholesale (removing stale files) instead of merging, installer runs the validator before installing, and every install writes a `.ai-engineering-skills.receipt.json` with collection/version/target/scope/timestamp/skill list. Adds `-WhatIf` support.
@@ -16,9 +20,8 @@ Versioning follows semver against `skillset.json`'s `version` field:
 - Added `.claude-plugin/plugin.json` and `.codex-plugin/plugin.json` native plugin manifests.
 - Added `.github/workflows/validate.yml` CI matrix (Ubuntu, Windows, macOS) running the validator and test suite on every push/PR.
 - Added `.gitattributes` to normalize line endings to LF.
-- Added `agents/openai.yaml` optional Codex UI metadata to all 13 skills for consistent display names and default prompts.
 - Added `LICENSE` (MIT).
 
 ## 0.1.0 — 2026-09-05
 
-- Initial cross-language engineering skill set: 7 workflow skills and 6 stack skills, `skillset.json` schema version 1.
+- Initial cross-language engineering skill set: 7 workflow skills and 6 stack skills, `skillset.json` schema version 1, each skill shipping optional `agents/openai.yaml` Codex UI metadata.

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "skills": [
     { "name": "analyze-requirement", "category": "workflow" },
     { "name": "plan-change", "category": "workflow" },
@@ -9,6 +9,7 @@
     { "name": "test-change", "category": "workflow" },
     { "name": "debug-issue", "category": "workflow" },
     { "name": "safe-refactor", "category": "workflow" },
+    { "name": "checkpoint-progress", "category": "workflow" },
     { "name": "dotnet-engineering", "category": "stack" },
     { "name": "java-engineering", "category": "stack" },
     { "name": "go-engineering", "category": "stack" },

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Checkpoint Progress"
+  short_description: "Preserve and resume multi-session or multi-agent work"
+  default_prompt: "Use $checkpoint-progress to check for or write a handoff note for this work."

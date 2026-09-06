@@ -23,6 +23,7 @@ Workflow skills:
 - `test-change`
 - `debug-issue`
 - `safe-refactor`
+- `checkpoint-progress`
 
 Stack skills:
 
