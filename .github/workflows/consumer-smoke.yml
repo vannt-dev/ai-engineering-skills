@@ -24,7 +24,7 @@ jobs:
           - consumer: OpenCodeV2
             install: npm install --global @opencode-ai/cli@beta
           - consumer: Antigravity
-            install: curl --fail --silent --show-error --location --output /tmp/install-antigravity.sh https://antigravity.google/cli/install && bash /tmp/install-antigravity.sh
+            install: curl --fail --silent --show-error --location --output /tmp/install-antigravity.sh https://antigravity.google/cli && bash /tmp/install-antigravity.sh
     name: ${{ matrix.consumer }} latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
