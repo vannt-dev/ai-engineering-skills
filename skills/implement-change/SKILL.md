@@ -15,7 +15,7 @@ Implementation authority covers only the code, tests, configuration, and documen
 
 1. Read instructions from the workspace root to the narrowest affected directory and inspect the current implementation before editing.
 2. Confirm the required behavior and stop if an unresolved decision would materially change contracts, data, security, or architecture.
-3. Detect every affected stack from manifests and source. Also apply each matching installed stack skill: `dotnet-engineering`, `java-engineering`, `go-engineering`, `python-engineering`, `typescript-engineering`, and `database-engineering`.
+3. Detect every affected stack from manifests and source. Inspect the available skills and apply every matching stack skill. The current collection includes `dotnet-engineering`, `java-engineering`, `go-engineering`, `python-engineering`, `typescript-engineering`, `database-engineering`, and `dart-engineering`.
 4. Trace affected callers, consumers, contracts, state, and tests across language or service boundaries.
 5. Make a minimal coherent change, preserving unrelated user work and existing conventions.
 6. Add or update behavior-focused tests in proportion to regression risk.
@@ -27,4 +27,3 @@ Do not invent architecture, upgrade dependencies opportunistically, weaken valid
 ## Output
 
 Report the implemented behavior, important files, verification results, remaining risks, and any follow-up that requires separate authority.
-

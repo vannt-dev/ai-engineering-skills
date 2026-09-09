@@ -7,6 +7,21 @@ Versioning follows semver against `skillset.json`'s `version` field:
 - **minor** — new skill added, or new optional metadata/target support.
 - **major** — breaking change to `skillset.json` schema, canonical frontmatter, or install layout.
 
+## 1.0.0 — 2026-09-09
+
+- Updated Antigravity user installation to the current global skills location, `~/.gemini/config/skills`; project installation remains under `.agents/skills`.
+- Hardened `-Overwrite` so paths without a valid collection receipt require the additional `-ForceOverwriteUnmanaged` switch.
+- Fixed `implement-change` stack routing to include `dart-engineering`, and added validation that keeps its explicit stack inventory synchronized with `skillset.json`.
+- Strengthened validation for full semantic versions, description length, OpenAI interface metadata nesting, missing JSON properties, and multi-error reporting.
+- Expanded installer and validator coverage from 13 to 21 functional tests, including negative fixtures, legacy Antigravity migration, receipt ownership boundaries, and optional Claude CLI plugin validation.
+- Documented OpenCode V2 recursive discovery and precedence behavior for Universal installations.
+- Pinned the GitHub Actions checkout dependency to the v4.4.0 commit digest.
+- Made installation transactional across destinations with pre-staging, same-volume backups, automatic rollback, and cleanup of receipt-owned skills removed from the current manifest.
+- Added a receipt-scoped transactional uninstaller with `-WhatIf` support and malformed-receipt refusal.
+- Added published JSON Schemas for the collection manifest, installation receipt, and Codex/Claude plugin metadata.
+- Added four behavioral eval cases, dependency-free fixture validation, and a cost-capped Claude CLI eval runner.
+- Added scheduled/manual consumer smoke CI for Codex, Claude Code, OpenCode stable/V2, and Antigravity.
+
 ## 0.4.0 — 2026-09-06
 
 - Added the `dart-engineering` stack skill: null-safety soundness, Flutter widget lifecycle and disposal, `BuildContext`-across-`await` safety, generated-file handling, and platform-channel contract guidance.

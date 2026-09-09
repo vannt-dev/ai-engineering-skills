@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "version": "0.4.0",
+  "version": "1.0.0",
   "skills": [
     { "name": "analyze-requirement", "category": "workflow" },
     { "name": "plan-change", "category": "workflow" },

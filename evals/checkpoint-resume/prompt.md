@@ -1,0 +1,1 @@
+You are resuming a partially completed repository change in a new session. There is a `docs/handoff/payment-retry-2026-09-08.md` file and uncommitted work in the tree. Explain what you do before editing, how you validate the handoff against reality, and what you leave behind if the work remains unfinished.

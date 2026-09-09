@@ -1,0 +1,1 @@
+Plan the implementation of a Flutter feature that reads an order from PostgreSQL through an existing API, shows it in a stateful screen, and refreshes it after an awaited edit dialog. Call out the specialist engineering guidance you would apply and the verification needed at each boundary.

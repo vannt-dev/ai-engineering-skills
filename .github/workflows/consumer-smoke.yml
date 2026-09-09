@@ -1,0 +1,36 @@
+name: Consumer smoke
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "37 3 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - consumer: Codex
+            install: npm install --global @openai/codex@latest
+          - consumer: Claude
+            install: npm install --global @anthropic-ai/claude-code@latest
+          - consumer: OpenCode
+            install: npm install --global opencode-ai@latest
+          - consumer: OpenCodeV2
+            install: npm install --global @opencode-ai/cli@beta
+          - consumer: Antigravity
+            install: curl --fail --silent --show-error --location --output /tmp/install-antigravity.sh https://antigravity.google/cli/install && bash /tmp/install-antigravity.sh
+    name: ${{ matrix.consumer }} latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - name: Install consumer CLI
+        shell: bash
+        run: ${{ matrix.install }}
+      - name: Run structural and CLI smoke tests
+        shell: pwsh
+        run: ./scripts/test-consumers.ps1 -RequireCommand ${{ matrix.consumer }}

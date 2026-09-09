@@ -16,11 +16,14 @@ Keep changes scoped to the skill's own guidance. Do not introduce repository-spe
 
 ```powershell
 .\scripts\validate-skills.ps1
+.\scripts\validate-evals.ps1
 .\scripts\test-tooling.ps1
 git diff --check
 ```
 
-All three must pass with no errors before a change is committed. CI runs the same two scripts on Windows, Linux, and macOS.
+All four must pass with no errors before a change is committed. CI runs the PowerShell checks on Windows, Linux, and macOS. A separate scheduled/manual workflow smoke-tests the latest supported consumer CLIs.
+
+Behavior changes should add or update a self-contained case under `evals/<case>/prompt.md` with at least one rubric in `evals/<case>/graders/*.md`. Model-backed eval execution is manual because it requires authentication and incurs usage cost.
 
 ## Versioning
 

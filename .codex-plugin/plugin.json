@@ -1,6 +1,6 @@
 {
   "name": "ai-engineering-skills",
-  "version": "0.4.0",
+  "version": "1.0.0",
   "description": "Portable software-engineering workflows and stack guidance for polyglot projects.",
   "author": {
     "name": "vannt-dev",
@@ -25,4 +25,3 @@
     ]
   }
 }
-

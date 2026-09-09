@@ -1,6 +1,7 @@
 # AI Engineering Skills
 
 [![Validate skills](https://github.com/vannt-dev/ai-engineering-skills/actions/workflows/validate.yml/badge.svg)](https://github.com/vannt-dev/ai-engineering-skills/actions/workflows/validate.yml)
+[![Consumer smoke](https://github.com/vannt-dev/ai-engineering-skills/actions/workflows/consumer-smoke.yml/badge.svg)](https://github.com/vannt-dev/ai-engineering-skills/actions/workflows/consumer-smoke.yml)
 
 A portable collection of software-engineering skills for Codex, Claude Code, OpenCode, and Google Antigravity.
 
@@ -44,13 +45,15 @@ In a polyglot repository, use the workflow skill that matches the task together 
 | Codex | `~/.agents/skills` | `<repo>/.agents/skills` |
 | Claude Code | `~/.claude/skills` | `<repo>/.claude/skills` |
 | OpenCode | `~/.config/opencode/skills` | `<repo>/.opencode/skills` |
-| Antigravity IDE | `~/.gemini/antigravity/skills` | `<repo>/.agents/skills` |
+| Antigravity | `~/.gemini/config/skills` | `<repo>/.agents/skills` |
 
-`Universal` installation avoids OpenCode duplicate-name discovery:
+`Universal` installation uses the shared Agent Skills locations where practical:
 
 - canonical skills go to `.agents/skills` for Codex, OpenCode, and workspace-scoped Antigravity;
 - a nested skills-directory plugin goes to `.claude/skills/ai-engineering-skills` for Claude Code;
-- user-scope Universal installation also installs the canonical skills into Antigravity's global directory.
+- user-scope Universal installation also installs the canonical skills into Antigravity's global directory at `.gemini/config/skills`.
+
+[OpenCode V2](https://opencode.ai/v2/docs/skills) recursively discovers `SKILL.md` files below `.claude/skills`, so it may also see the Claude plugin copies during a Universal installation. It resolves those duplicate IDs by source precedence, with `.agents/skills` taking precedence over `.claude/skills`. Use the direct `OpenCode` target when a single discovery source is required.
 
 The repository contains `.codex-plugin/plugin.json` and `.claude-plugin/plugin.json` so it can also be packaged natively for Codex or Claude Code.
 
@@ -58,10 +61,17 @@ The repository contains `.codex-plugin/plugin.json` and `.claude-plugin/plugin.j
 
 ```powershell
 .\scripts\validate-skills.ps1
+.\scripts\validate-evals.ps1
 .\scripts\test-tooling.ps1
 ```
 
-The validator has no Python or third-party module dependency. It validates the intentionally restricted portable frontmatter schema, optional Codex UI metadata, reference links, collection manifest, duplicate names, and both plugin manifests.
+The validators have no Python or third-party module dependency. They validate the intentionally restricted portable frontmatter schema, optional Codex UI metadata, reference links, collection manifest, duplicate names, plugin manifests, published JSON Schemas, and behavioral eval fixture structure.
+
+The `schemas/` directory publishes contracts for `skillset.json`, installation receipts, and both plugin metadata formats. Behavioral cases live under `evals/`. To execute them with Claude Code, an authenticated CLI, and an explicit cost ceiling:
+
+```powershell
+.\scripts\run-behavior-evals.ps1 -Runs 1 -Threshold 0.75 -MaxCostUsd 2
+```
 
 ## Install
 
@@ -71,7 +81,7 @@ Preview a user-level Universal installation:
 .\scripts\install-skills.ps1 -Target Universal -Scope User -WhatIf
 ```
 
-Install for all supported products without duplicate OpenCode discovery:
+Install for all supported products:
 
 ```powershell
 .\scripts\install-skills.ps1 -Target Universal -Scope User
@@ -92,7 +102,28 @@ For project scope, provide the repository root:
 .\scripts\install-skills.ps1 -Target Universal -Scope Project -ProjectRoot C:\src\my-project
 ```
 
-The installer validates the collection before copying. It refuses to mix with an existing installation unless `-Overwrite` is supplied. `-Overwrite` replaces only the managed skill directories, removing stale files inside them, and writes `.ai-engineering-skills.receipt.json` with the installed version.
+The installer validates and stages the complete collection before copying. It refuses to mix with an existing installation unless `-Overwrite` is supplied. `-Overwrite` replaces only directories identified by an `.ai-engineering-skills.receipt.json` receipt, removes stale files and receipt-owned skills no longer present in the manifest, and writes a new receipt with the installed version. All destinations are committed as one transaction; an error restores the previous installation.
+
+To replace a colliding path that has no valid collection receipt, inspect it first and use both explicit switches:
+
+```powershell
+.\scripts\install-skills.ps1 -Target Codex -Scope Project -ProjectRoot C:\src\my-project -Overwrite -ForceOverwriteUnmanaged
+```
+
+Version 1.0.0 moved Antigravity user installs from `.gemini/antigravity/skills` to the [current global location](https://codelabs.developers.google.com/getting-started-with-antigravity-skills), `.gemini/config/skills`. Re-running an existing managed Antigravity or Universal user installation with `-Overwrite` migrates only the skill directories listed in its legacy receipt and preserves unrelated directories.
+
+## Uninstall
+
+Preview or remove a receipt-managed installation:
+
+```powershell
+.\scripts\uninstall-skills.ps1 -Target Universal -Scope User -WhatIf
+.\scripts\uninstall-skills.ps1 -Target Universal -Scope User
+```
+
+Project scope accepts the same `-ProjectRoot` argument as the installer. The uninstaller refuses malformed receipts, removes only paths named by a valid collection receipt, preserves unrelated skills, and rolls back if it cannot move every managed path into quarantine.
+
+The scheduled `consumer-smoke.yml` workflow installs the latest Codex, Claude Code, OpenCode stable/V2, and Antigravity CLIs in isolated jobs. It verifies supported discovery layouts and runs each CLI's version check; Claude additionally validates the installed plugin in strict mode.
 
 ## Add project-specific rules
 

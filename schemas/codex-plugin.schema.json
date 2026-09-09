@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/vannt-dev/ai-engineering-skills/main/schemas/codex-plugin.schema.json",
+  "title": "AI Engineering Skills Codex plugin metadata",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["name", "version", "description", "author", "homepage", "repository", "keywords", "skills", "interface"],
+  "properties": {
+    "name": { "const": "ai-engineering-skills" },
+    "version": { "type": "string", "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-((?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)(?:\\.(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*))?(?:\\+([0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*))?$" },
+    "description": { "type": "string", "minLength": 1 },
+    "author": { "$ref": "#/$defs/author" },
+    "homepage": { "type": "string", "format": "uri" },
+    "repository": { "type": "string", "format": "uri" },
+    "keywords": { "type": "array", "items": { "type": "string" } },
+    "skills": { "const": "./skills/" },
+    "interface": {
+      "type": "object",
+      "required": ["displayName", "shortDescription", "longDescription", "developerName", "category", "capabilities", "websiteURL", "defaultPrompt"]
+    }
+  },
+  "$defs": {
+    "author": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "url"],
+      "properties": { "name": { "type": "string" }, "url": { "type": "string", "format": "uri" } }
+    }
+  }
+}

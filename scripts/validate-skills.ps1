@@ -9,8 +9,45 @@ $skillsRoot = Join-Path $collectionRoot "skills"
 $manifestPath = Join-Path $collectionRoot "skillset.json"
 $codexManifestPath = Join-Path $collectionRoot ".codex-plugin\plugin.json"
 $claudeManifestPath = Join-Path $collectionRoot ".claude-plugin\plugin.json"
+$schemasRoot = Join-Path $collectionRoot "schemas"
 
 $errors = [System.Collections.Generic.List[string]]::new()
+$semverPattern = '^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*))?(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$'
+$declaredNames = [System.Collections.Generic.List[string]]::new()
+$stackNames = [System.Collections.Generic.List[string]]::new()
+
+function Get-PropertyValue {
+    param($Object, [string]$Name)
+
+    if ($null -ne $Object -and $Object.PSObject.Properties[$Name]) {
+        return $Object.PSObject.Properties[$Name].Value
+    }
+    return $null
+}
+
+# Parse the published contracts up front. Runtime validation below intentionally
+# remains dependency-free and enforces the same collection-specific constraints.
+$requiredSchemas = @("skillset.schema.json", "receipt.schema.json", "codex-plugin.schema.json", "claude-plugin.schema.json")
+$parsedSchemas = @{}
+foreach ($schemaName in $requiredSchemas) {
+    $schemaPath = Join-Path $schemasRoot $schemaName
+    if (-not (Test-Path -LiteralPath $schemaPath -PathType Leaf)) {
+        $errors.Add("Missing JSON Schema: schemas/$schemaName")
+        continue
+    }
+    try {
+        $schema = Get-Content -LiteralPath $schemaPath -Raw | ConvertFrom-Json
+        if ((Get-PropertyValue $schema '$schema') -ne 'https://json-schema.org/draft/2020-12/schema') {
+            $errors.Add("Schema '$schemaName' must declare JSON Schema draft 2020-12.")
+        }
+        if ([string]::IsNullOrWhiteSpace((Get-PropertyValue $schema '$id'))) {
+            $errors.Add("Schema '$schemaName' is missing a stable `$id.")
+        }
+        $parsedSchemas[$schemaName] = $schema
+    } catch {
+        $errors.Add("Failed to parse schemas/$($schemaName): $($_.Exception.Message)")
+    }
+}
 
 # 1. Check directory & manifest existence
 if (-not (Test-Path -LiteralPath $skillsRoot -PathType Container)) {
@@ -29,23 +66,34 @@ try {
 }
 
 if ($manifest) {
-    if ($manifest.schemaVersion -ne 2) {
-        $errors.Add("skillset.json schemaVersion must be 2, found: $($manifest.schemaVersion)")
+    $schemaVersion = Get-PropertyValue $manifest "schemaVersion"
+    $manifestVersion = Get-PropertyValue $manifest "version"
+    $manifestSkills = Get-PropertyValue $manifest "skills"
+
+    if ($schemaVersion -ne 2) {
+        $errors.Add("skillset.json schemaVersion must be 2, found: $schemaVersion")
     }
-    if ([string]::IsNullOrWhiteSpace($manifest.version) -or $manifest.version -notmatch '^\d+\.\d+\.\d+(-[a-zA-Z0-9.]+)?$') {
-        $errors.Add("skillset.json version must be valid semver, found: '$($manifest.version)'")
+    if ($parsedSchemas.ContainsKey("skillset.schema.json")) {
+        $schemaProperties = Get-PropertyValue $parsedSchemas["skillset.schema.json"] "properties"
+        $schemaVersionContract = Get-PropertyValue $schemaProperties "schemaVersion"
+        $schemaConst = Get-PropertyValue $schemaVersionContract "const"
+        if ($schemaConst -ne $schemaVersion) {
+            $errors.Add("skillset.schema.json schemaVersion const '$schemaConst' does not match skillset.json '$schemaVersion'.")
+        }
+    }
+    if ([string]::IsNullOrWhiteSpace($manifestVersion) -or $manifestVersion -notmatch $semverPattern) {
+        $errors.Add("skillset.json version must be valid semver, found: '$manifestVersion'")
     }
 
     $seenSkillNames = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
-    $declaredNames = [System.Collections.Generic.List[string]]::new()
     $validCategories = @("workflow", "stack")
 
-    if ($manifest.skills -isnot [System.Array] -and $manifest.skills -isnot [System.Collections.IList]) {
+    if ($manifestSkills -isnot [System.Array] -and $manifestSkills -isnot [System.Collections.IList]) {
         $errors.Add("skillset.json 'skills' property must be a list")
     } else {
-        foreach ($skillItem in $manifest.skills) {
-            $sName = $skillItem.name
-            $sCat = $skillItem.category
+        foreach ($skillItem in $manifestSkills) {
+            $sName = Get-PropertyValue $skillItem "name"
+            $sCat = Get-PropertyValue $skillItem "category"
             if ([string]::IsNullOrWhiteSpace($sName)) {
                 $errors.Add("skillset.json contains a skill entry without a name")
                 continue
@@ -59,6 +107,8 @@ if ($manifest) {
 
             if ([string]::IsNullOrWhiteSpace($sCat) -or $sCat -notin $validCategories) {
                 $errors.Add("Skill '$sName' has invalid category '$sCat'. Expected one of: $($validCategories -join ', ')")
+            } elseif ($sCat -eq "stack") {
+                $stackNames.Add($sName)
             }
         }
     }
@@ -79,21 +129,27 @@ if ($manifest) {
 if (Test-Path -LiteralPath $codexManifestPath -PathType Leaf) {
     try {
         $codex = Get-Content -LiteralPath $codexManifestPath -Raw | ConvertFrom-Json
-        if ($codex.name -ne "ai-engineering-skills") {
-            $errors.Add(".codex-plugin/plugin.json name must be 'ai-engineering-skills', found: '$($codex.name)'")
+        $codexName = Get-PropertyValue $codex "name"
+        $codexVersion = Get-PropertyValue $codex "version"
+        $codexSkills = Get-PropertyValue $codex "skills"
+        $codexInterface = Get-PropertyValue $codex "interface"
+        if ($codexName -ne "ai-engineering-skills") {
+            $errors.Add(".codex-plugin/plugin.json name must be 'ai-engineering-skills', found: '$codexName'")
         }
-        if ($manifest -and $codex.version -ne $manifest.version) {
-            $errors.Add(".codex-plugin/plugin.json version '$($codex.version)' does not match skillset.json version '$($manifest.version)'")
+        if ($manifest -and $codexVersion -ne $manifestVersion) {
+            $errors.Add(".codex-plugin/plugin.json version '$codexVersion' does not match skillset.json version '$manifestVersion'")
         }
-        if (-not $codex.skills) {
+        if (-not $codexSkills) {
             $errors.Add(".codex-plugin/plugin.json is missing 'skills' property")
         } else {
-            $codexSkillsResolved = Join-Path $collectionRoot $codex.skills
+            $codexSkillsResolved = Join-Path $collectionRoot $codexSkills
             if (-not (Test-Path -LiteralPath $codexSkillsResolved -PathType Container)) {
                 $errors.Add(".codex-plugin/plugin.json skills path does not exist: $codexSkillsResolved")
             }
         }
-        if (-not $codex.interface -or -not $codex.interface.displayName -or -not $codex.interface.shortDescription) {
+        $displayName = Get-PropertyValue $codexInterface "displayName"
+        $shortDescription = Get-PropertyValue $codexInterface "shortDescription"
+        if (-not $codexInterface -or -not $displayName -or -not $shortDescription) {
             $errors.Add(".codex-plugin/plugin.json interface metadata is missing or incomplete")
         }
     } catch {
@@ -106,11 +162,13 @@ if (Test-Path -LiteralPath $codexManifestPath -PathType Leaf) {
 if (Test-Path -LiteralPath $claudeManifestPath -PathType Leaf) {
     try {
         $claude = Get-Content -LiteralPath $claudeManifestPath -Raw | ConvertFrom-Json
-        if ($claude.name -ne "ai-engineering-skills") {
-            $errors.Add(".claude-plugin/plugin.json name must be 'ai-engineering-skills', found: '$($claude.name)'")
+        $claudeName = Get-PropertyValue $claude "name"
+        $claudeVersion = Get-PropertyValue $claude "version"
+        if ($claudeName -ne "ai-engineering-skills") {
+            $errors.Add(".claude-plugin/plugin.json name must be 'ai-engineering-skills', found: '$claudeName'")
         }
-        if ($manifest -and $claude.version -ne $manifest.version) {
-            $errors.Add(".claude-plugin/plugin.json version '$($claude.version)' does not match skillset.json version '$($manifest.version)'")
+        if ($manifest -and $claudeVersion -ne $manifestVersion) {
+            $errors.Add(".claude-plugin/plugin.json version '$claudeVersion' does not match skillset.json version '$manifestVersion'")
         }
     } catch {
         $errors.Add("Failed to parse .claude-plugin/plugin.json: $($_.Exception.Message)")
@@ -215,6 +273,8 @@ foreach ($skillDir in Get-ChildItem -LiteralPath $skillsRoot -Directory) {
 
         if (-not $parsed.ContainsKey("description") -or [string]::IsNullOrWhiteSpace($parsed["description"])) {
             $errors.Add("Frontmatter missing or empty 'description' in $skillPath")
+        } elseif ($parsed["description"].Length -gt 1024) {
+            $errors.Add("Frontmatter description exceeds 1024 characters in $skillPath")
         }
     }
 
@@ -222,30 +282,82 @@ foreach ($skillDir in Get-ChildItem -LiteralPath $skillsRoot -Directory) {
         $errors.Add("Unfinished scaffold marker in $skillPath")
     }
 
-    # Validate optional agents/openai.yaml
+    # Validate optional agents/openai.yaml. Parse the direct interface mapping so
+    # fields elsewhere in the document cannot satisfy these checks accidentally.
     $openAiPath = Join-Path $skillDir.FullName "agents\openai.yaml"
     if (Test-Path -LiteralPath $openAiPath -PathType Leaf) {
         $openAiContent = Get-Content -LiteralPath $openAiPath -Raw
-        if ($openAiContent -notmatch '(?m)^interface:\s*$') {
+        $interfaceValues = @{}
+        $interfaceSeen = $false
+        $currentRoot = $null
+        foreach ($openAiLine in ($openAiContent -split '\r?\n')) {
+            if ($openAiLine -match "`t") {
+                $errors.Add("Tab indentation is not allowed in $openAiPath")
+                continue
+            }
+            if ([string]::IsNullOrWhiteSpace($openAiLine) -or $openAiLine.TrimStart().StartsWith("#")) {
+                continue
+            }
+            if ($openAiLine -match '^([a-zA-Z0-9_-]+):\s*(.*)$') {
+                $currentRoot = $matches[1]
+                if ($currentRoot -eq "interface") {
+                    if ($interfaceSeen) {
+                        $errors.Add("Duplicate 'interface' root key in $openAiPath")
+                    }
+                    $interfaceSeen = $true
+                    if (-not [string]::IsNullOrWhiteSpace($matches[2])) {
+                        $errors.Add("The 'interface' key must contain a nested mapping in $openAiPath")
+                    }
+                }
+                continue
+            }
+            if (($openAiLine -match '^  ([a-zA-Z0-9_-]+):\s*(.*)$') -and $currentRoot -eq "interface") {
+                $interfaceKey = $matches[1]
+                $interfaceValue = $matches[2].Trim()
+                if ($interfaceValues.ContainsKey($interfaceKey)) {
+                    $errors.Add("Duplicate interface field '$interfaceKey' in $openAiPath")
+                }
+                $interfaceValues[$interfaceKey] = $interfaceValue
+                continue
+            }
+            if ($currentRoot -eq "interface" -and $openAiLine -match '^\s+') {
+                $errors.Add("Invalid interface field syntax in $($openAiPath): '$openAiLine'")
+            } elseif ($openAiLine -notmatch '^\s+') {
+                $errors.Add("Invalid root YAML syntax in $($openAiPath): '$openAiLine'")
+            }
+        }
+
+        if (-not $interfaceSeen) {
             $errors.Add("Missing 'interface:' root key in $openAiPath")
         }
-        if ($openAiContent -notmatch '(?m)^\s+display_name:\s*\S+') {
+        if (-not $interfaceValues.ContainsKey("display_name") -or [string]::IsNullOrWhiteSpace($interfaceValues["display_name"])) {
             $errors.Add("Missing 'display_name' in $openAiPath")
         }
-        if ($openAiContent -notmatch '(?m)^\s+short_description:\s*\S+') {
+        if (-not $interfaceValues.ContainsKey("short_description") -or [string]::IsNullOrWhiteSpace($interfaceValues["short_description"])) {
             $errors.Add("Missing 'short_description' in $openAiPath")
         }
-        if ($openAiContent -notmatch '(?m)^\s+default_prompt:\s*\S+') {
+        if (-not $interfaceValues.ContainsKey("default_prompt") -or [string]::IsNullOrWhiteSpace($interfaceValues["default_prompt"])) {
             $errors.Add("Missing 'default_prompt' in $openAiPath")
-        }
-        if ($openAiContent -notmatch [regex]::Escape("`$$name")) {
+        } elseif ($interfaceValues["default_prompt"] -notmatch [regex]::Escape("`$$name")) {
             $errors.Add("Default prompt in $openAiPath does not mention the skill invocation token: `$$name")
         }
     }
 }
 
+# Keep the implementation workflow's explicit routing inventory synchronized
+# with every stack skill declared by the collection manifest.
+$implementSkillPath = Join-Path $skillsRoot "implement-change\SKILL.md"
+if (Test-Path -LiteralPath $implementSkillPath -PathType Leaf) {
+    $implementSkillContent = Get-Content -LiteralPath $implementSkillPath -Raw
+    foreach ($stackName in $stackNames) {
+        if ($implementSkillContent -notmatch [regex]::Escape("``$stackName``")) {
+            $errors.Add("implement-change routing does not mention stack skill '$stackName'")
+        }
+    }
+}
+
 if ($errors.Count -gt 0) {
-    $errors | ForEach-Object { Write-Error $_ }
+    $errors | ForEach-Object { [Console]::Error.WriteLine($_) }
     exit 1
 }
 
