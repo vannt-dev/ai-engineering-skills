@@ -17,7 +17,18 @@
         "required": ["name", "category"],
         "properties": {
           "name": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$", "maxLength": 64 },
-          "category": { "enum": ["workflow", "stack"] }
+          "category": { "enum": ["workflow", "stack"] },
+          "appliesTo": {
+            "description": "Project-relative globs; a harness may auto-select the skill when a changed file matches.",
+            "type": "array",
+            "uniqueItems": true,
+            "items": { "type": "string", "minLength": 1, "pattern": "^(?!/)(?![A-Za-z]:)(?!.*\\.\\.)[^\\\\]+$" }
+          },
+          "tags": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$", "maxLength": 32 }
+          }
         }
       }
     }
