@@ -28,6 +28,8 @@ Each finding must include severity, category, exact location, failing scenario, 
 
 When the workflow supplies a resolved file list, requirement background, or output from a review tool (for example a Junto plan or an OpenCodeReview delegate preview), review exactly that scope and judge whether the change satisfies the stated requirement. Treat tool findings as inputs to verify, not verdicts, and report them with the severity tiers and categories below so they can be normalized. Never state that a build, test, or review gate passed unless a command result shows it.
 
+Check that review evidence belongs to the current source, refs, policy, and requirement context. Source edits after or during review require fresh evidence, including edits made through shell commands or external editors. A successful delegate preview or rule lookup confirms file/rule selection only; it does not establish that a model reviewed the source. Explicitly distinguish mock results, fixture validation, and live semantic review.
+
 ### Severity Tiers
 - **critical**: Active exploitability, critical data loss, or blocking service failures.
 - **high**: Broken business contracts, severe performance degradation, authentication/authorization leaks, or unhandled exceptions.
@@ -43,4 +45,3 @@ When the workflow supplies a resolved file list, requirement background, or outp
 - `testing`: Missing test coverage, brittle assertions, untested edge cases.
 - `architecture`: Layering violations, circular dependencies, boundary leaks.
 - `other`: General findings not fitting standard categories.
-
