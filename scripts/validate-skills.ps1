@@ -117,7 +117,6 @@ if ($manifest) {
                 $listProperty = $skillItem.PSObject.Properties[$listName]
                 if ($null -eq $listProperty) { continue }
                 $listValue = $listProperty.Value
-                if ($null -eq $listValue) { continue }
                 if ($listValue -isnot [System.Array] -and $listValue -isnot [System.Collections.IList]) {
                     $errors.Add("Skill '$sName' property '$listName' must be a list of strings")
                     continue
@@ -131,8 +130,8 @@ if ($manifest) {
                     if (-not $seenListItems.Add($item)) {
                         $errors.Add("Skill '$sName' property '$listName' contains duplicate value '$item'")
                     }
-                    if ($listName -eq "tags" -and $item -notmatch '^[a-z0-9]+(?:-[a-z0-9]+)*$') {
-                        $errors.Add("Skill '$sName' tag '$item' must be lowercase kebab-case")
+                    if ($listName -eq "tags" -and ($item -cnotmatch '^[a-z0-9]+(?:-[a-z0-9]+)*$' -or $item.Length -gt 32)) {
+                        $errors.Add("Skill '$sName' tag '$item' must be lowercase kebab-case and at most 32 characters")
                     }
                     if ($listName -eq "appliesTo" -and ($item -match '^(/|[A-Za-z]:)' -or $item -match '\.\.' -or $item.Contains('\'))) {
                         $errors.Add("Skill '$sName' appliesTo pattern '$item' must be a project-relative glob with forward slashes and no '..'")

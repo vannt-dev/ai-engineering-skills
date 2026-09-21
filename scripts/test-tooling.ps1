@@ -560,6 +560,21 @@ try {
         Assert-True (Test-Path -LiteralPath (Join-Path $projRoot ".agents\skills\.ai-engineering-skills.receipt.json")) "Receipt remains installed"
     }
 
+    Run-Test "Registry metadata rejects null, uppercase, and oversized tags" {
+        $fixtureRoot = New-ValidationFixture "invalid-routing-metadata"
+        $fixtureManifestPath = Join-Path $fixtureRoot "skillset.json"
+        foreach ($badValue in @('{"tags":null}', '{"appliesTo":null}', '{"tags":["UPPERCASE"]}', '{"tags":["abcdefghijklmnopqrstuvwxyzabcdefg"]}')) {
+            $fixtureManifest = Get-Content -LiteralPath (Join-Path $collectionRoot "skillset.json") -Raw | ConvertFrom-Json
+            $invalid = $badValue | ConvertFrom-Json
+            foreach ($property in $invalid.PSObject.Properties) {
+                $fixtureManifest.skills[0] | Add-Member -MemberType NoteProperty -Name $property.Name -Value $property.Value -Force
+            }
+            [System.IO.File]::WriteAllText($fixtureManifestPath, ($fixtureManifest | ConvertTo-Json -Depth 10), [System.Text.UTF8Encoding]::new($false))
+            $result = Invoke-ValidatorProcess $fixtureRoot
+            Assert-True ($result.ExitCode -ne 0) "Invalid routing metadata is rejected: $badValue"
+        }
+    }
+
     Write-Host "`nAll $passCount/$testCount tests passed successfully!" -ForegroundColor Green
 }
 finally {
