@@ -9,6 +9,7 @@ Versioning follows semver against `skillset.json`'s `version` field:
 
 ## Unreleased
 
+- Added a responsive project landing page with all 15 skills, category/search filters, preview-first installation commands, clipboard fallback, browser checks and a GitHub Pages workflow.
 - Return a successful tooling-suite exit code after expected negative fixtures, including PowerShell command wrappers used by CI.
 - Fixed registry metadata validation to reject explicit null lists, uppercase tags, and tags longer than the schema's 32-character limit; added regression fixtures.
 - Added optional machine-readable registry metadata to `skillset.json`: per-skill `appliesTo` globs and `tags`. Harnesses such as Junto use them to select a small, predictable set of skills for the files that changed instead of loading every skill. The metadata lives in the manifest because canonical `SKILL.md` frontmatter only allows `name` and `description`.
