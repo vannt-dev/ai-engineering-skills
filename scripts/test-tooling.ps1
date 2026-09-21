@@ -580,3 +580,6 @@ try {
 finally {
     Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue
 }
+
+# Negative fixtures intentionally fail native child processes; their exit code is not the suite result.
+exit 0
