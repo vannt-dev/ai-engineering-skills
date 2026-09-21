@@ -110,6 +110,34 @@ if ($manifest) {
             } elseif ($sCat -eq "stack") {
                 $stackNames.Add($sName)
             }
+
+            # Optional registry metadata. Harnesses resolve skills from it, so a malformed entry must fail here.
+            foreach ($listName in @("appliesTo", "tags")) {
+                # Read the property directly: returning a one-element array from a function unrolls it to a scalar.
+                $listProperty = $skillItem.PSObject.Properties[$listName]
+                if ($null -eq $listProperty) { continue }
+                $listValue = $listProperty.Value
+                if ($listValue -isnot [System.Array] -and $listValue -isnot [System.Collections.IList]) {
+                    $errors.Add("Skill '$sName' property '$listName' must be a list of strings")
+                    continue
+                }
+                $seenListItems = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+                foreach ($item in $listValue) {
+                    if ($item -isnot [string] -or [string]::IsNullOrWhiteSpace($item)) {
+                        $errors.Add("Skill '$sName' property '$listName' must contain only non-empty strings")
+                        continue
+                    }
+                    if (-not $seenListItems.Add($item)) {
+                        $errors.Add("Skill '$sName' property '$listName' contains duplicate value '$item'")
+                    }
+                    if ($listName -eq "tags" -and ($item -cnotmatch '^[a-z0-9]+(?:-[a-z0-9]+)*$' -or $item.Length -gt 32)) {
+                        $errors.Add("Skill '$sName' tag '$item' must be lowercase kebab-case and at most 32 characters")
+                    }
+                    if ($listName -eq "appliesTo" -and ($item -match '^(/|[A-Za-z]:)' -or $item -match '\.\.' -or $item.Contains('\'))) {
+                        $errors.Add("Skill '$sName' appliesTo pattern '$item' must be a project-relative glob with forward slashes and no '..'")
+                    }
+                }
+            }
         }
     }
 

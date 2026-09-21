@@ -7,6 +7,14 @@ Versioning follows semver against `skillset.json`'s `version` field:
 - **minor** — new skill added, or new optional metadata/target support.
 - **major** — breaking change to `skillset.json` schema, canonical frontmatter, or install layout.
 
+## Unreleased
+
+- Return a successful tooling-suite exit code after expected negative fixtures, including PowerShell command wrappers used by CI.
+- Fixed registry metadata validation to reject explicit null lists, uppercase tags, and tags longer than the schema's 32-character limit; added regression fixtures.
+- Added optional machine-readable registry metadata to `skillset.json`: per-skill `appliesTo` globs and `tags`. Harnesses such as Junto use them to select a small, predictable set of skills for the files that changed instead of loading every skill. The metadata lives in the manifest because canonical `SKILL.md` frontmatter only allows `name` and `description`.
+- Extended `skillset.schema.json` and `validate-skills.ps1` to validate `appliesTo` and `tags`.
+- `review-code` now says how to review when the harness supplies a resolved file list, requirement background, or review-tool output.
+
 ## 1.0.0 — 2026-09-09
 
 - Updated Antigravity user installation to the current global skills location, `~/.gemini/config/skills`; project installation remains under `.agents/skills`.
