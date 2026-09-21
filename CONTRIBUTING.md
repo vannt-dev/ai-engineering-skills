@@ -23,6 +23,10 @@ git diff --check
 
 All four must pass with no errors before a change is committed. CI runs the PowerShell checks on Windows, Linux, and macOS. A separate scheduled/manual workflow smoke-tests the latest supported consumer CLIs.
 
+For changes to `site/`, also run `python scripts/test-site.py` after installing Playwright and
+Chromium as documented in the README. Keep the catalog aligned with `skillset.json`; the browser
+checks enforce this. Static site changes do not change the installed skill collection version.
+
 Behavior changes should add or update a self-contained case under `evals/<case>/prompt.md` with at least one rubric in `evals/<case>/graders/*.md`. Model-backed eval execution is manual because it requires authentication and incurs usage cost.
 
 ## Versioning

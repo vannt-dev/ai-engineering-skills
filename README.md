@@ -5,6 +5,8 @@
 
 A portable collection of software-engineering skills for Codex, Claude Code, OpenCode, and Google Antigravity.
 
+[Explore the collection and installation guide →](https://vannt-dev.github.io/ai-engineering-skills/)
+
 The collection has one canonical source under `skills/`:
 
 - Workflow skills define how to analyze, plan, implement, review, test, debug, and refactor.
@@ -138,3 +140,22 @@ Do not copy repository architecture or business rules into these shared skills. 
 ## Contributing
 
 See `CONTRIBUTING.md` for how to add or change a skill, and `CHANGELOG.md` for release history.
+
+## Project site
+
+The static landing page lives in `site/`, with a searchable skill catalog and a copyable installation
+command builder. It has no runtime dependencies, tracking, or external font requests. Core content
+and installation instructions remain available without JavaScript.
+
+Preview it with `python -m http.server 8766 --directory site`. Browser checks verify responsive layout,
+catalog parity with `skillset.json`, repository links, keyboard access and installation controls:
+
+```sh
+python -m pip install playwright==1.62.0
+python -m playwright install chromium
+python scripts/test-site.py
+```
+
+GitHub Pages must use **GitHub Actions** as its source in repository Settings → Pages. The
+`Project site` workflow checks pull requests and deploys changes from `main` only after browser
+checks pass. The public URL is `https://vannt-dev.github.io/ai-engineering-skills/`.
