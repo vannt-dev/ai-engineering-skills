@@ -7,7 +7,10 @@ Versioning follows semver against `skillset.json`'s `version` field:
 - **minor** — new skill added, or new optional metadata/target support.
 - **major** — breaking change to `skillset.json` schema, canonical frontmatter, or install layout.
 
-## Unreleased
+## 1.1.0 - 2026-09-22
+
+- Added explicit freshness guidance for review evidence and two evaluation fixtures for delegated review and stale results.
+- Existing managed installations can upgrade with `-Overwrite`; unrelated skills remain untouched. Optional registry metadata retains schema version 2.
 
 - Added a responsive project landing page with all 15 skills, category/search filters, preview-first installation commands, clipboard fallback, browser checks and a GitHub Pages workflow.
 - Return a successful tooling-suite exit code after expected negative fixtures, including PowerShell command wrappers used by CI.
