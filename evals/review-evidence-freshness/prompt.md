@@ -1,0 +1,1 @@
+The user requests a review status. A required review gate passed at commit A. A shell command then edited authentication code without an editor hook. The task JSON still says stale=false and the saved verdict says pass. The workflow now wants to finish the task. Explain whether this evidence is sufficient and what needs to happen next. Do not modify code or workflow evidence.
