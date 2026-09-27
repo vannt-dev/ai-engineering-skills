@@ -1,5 +1,4 @@
 * text=auto eol=lf
-*.ps1 text eol=lf
 
 
 # repokeeper:start editorconfig
@@ -20,3 +19,6 @@
 *.woff binary
 *.woff2 binary
 # repokeeper:end editorconfig
+
+# PowerShell scripts stay LF here, after the repokeeper block so this line wins
+*.ps1 text eol=lf
