@@ -206,7 +206,7 @@ if (Test-Path -LiteralPath $claudeManifestPath -PathType Leaf) {
 }
 
 # 4. Helper function to test markdown relative links
-function Test-MarkdownLinks {
+function Test-MarkdownLink {
     param(
         [string]$FilePath,
         [System.Collections.Generic.List[string]]$ErrorsList
@@ -216,8 +216,8 @@ function Test-MarkdownLinks {
     $contentNoCode = [regex]::Replace($contentNoCode, '`[^`\r\n]*`', '')
     $fileDir = Split-Path -Parent $FilePath
     $pattern = '\[([^\]]+)\]\(([^)]+)\)'
-    $matches = [regex]::Matches($contentNoCode, $pattern)
-    foreach ($m in $matches) {
+    $linkMatches = [regex]::Matches($contentNoCode, $pattern)
+    foreach ($m in $linkMatches) {
         $target = $m.Groups[2].Value.Trim()
         if ($target -match '^(?:[a-zA-Z][a-zA-Z0-9+.-]*:|\/\/)' -or $target.StartsWith('#') -or $target.StartsWith('mailto:')) {
             continue
@@ -235,7 +235,7 @@ function Test-MarkdownLinks {
 # Check root README.md links
 $readmePath = Join-Path $collectionRoot "README.md"
 if (Test-Path -LiteralPath $readmePath) {
-    Test-MarkdownLinks -FilePath $readmePath -ErrorsList $errors
+    Test-MarkdownLink -FilePath $readmePath -ErrorsList $errors
 }
 
 # 5. Validate each skill directory
@@ -253,7 +253,7 @@ foreach ($skillDir in Get-ChildItem -LiteralPath $skillsRoot -Directory) {
 
     # Validate all markdown links in skill directory
     Get-ChildItem -LiteralPath $skillDir.FullName -Filter "*.md" -Recurse | ForEach-Object {
-        Test-MarkdownLinks -FilePath $_.FullName -ErrorsList $errors
+        Test-MarkdownLink -FilePath $_.FullName -ErrorsList $errors
     }
 
     # Validate SKILL.md frontmatter
