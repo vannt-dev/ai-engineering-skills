@@ -57,7 +57,7 @@ New-Item -ItemType Directory -Path $testRoot -Force | Out-Null
 $testCount = 0
 $passCount = 0
 
-function Run-Test([string]$Name, [scriptblock]$Body) {
+function Invoke-TestCase([string]$Name, [scriptblock]$Body) {
     $script:testCount++
     Write-Host -NoNewline "[TEST $script:testCount] $Name... "
     try {
@@ -73,13 +73,13 @@ function Run-Test([string]$Name, [scriptblock]$Body) {
 
 try {
     # Test 1: Validator executes and passes
-    Run-Test "Validator passes on collection" {
+    Invoke-TestCase "Validator passes on collection" {
         & $validateScript
         Assert-True ($null -eq $LASTEXITCODE -or $LASTEXITCODE -eq 0) "Validator exited with 0"
     }
 
     # Test 2: Collision detection without -Overwrite
-    Run-Test "Installer aborts on collision before making changes" {
+    Invoke-TestCase "Installer aborts on collision before making changes" {
         $userHome = Join-Path $testRoot "user-collision"
         $preExisting = Join-Path $userHome ".agents\skills\analyze-requirement"
         New-Item -ItemType Directory -Path $preExisting -Force | Out-Null
@@ -97,7 +97,7 @@ try {
     }
 
     # Test 3: Universal User installation
-    Run-Test "Universal User installs canonical, Antigravity, and Claude plugin" {
+    Invoke-TestCase "Universal User installs canonical, Antigravity, and Claude plugin" {
         $userHome = Join-Path $testRoot "user-universal"
         & $installScript -Target Universal -Scope User -UserHome $userHome
 
@@ -145,7 +145,7 @@ try {
     }
 
     # Test 4: Antigravity User Single Target
-    Run-Test "Antigravity User installs only to .gemini/config/skills" {
+    Invoke-TestCase "Antigravity User installs only to .gemini/config/skills" {
         $userHome = Join-Path $testRoot "user-antigravity"
         & $installScript -Target Antigravity -Scope User -UserHome $userHome
 
@@ -157,7 +157,7 @@ try {
     }
 
     # Test 5: Universal Project Installation
-    Run-Test "Universal Project installs canonical .agents/skills and Claude plugin" {
+    Invoke-TestCase "Universal Project installs canonical .agents/skills and Claude plugin" {
         $projRoot = Join-Path $testRoot "project-universal"
         New-Item -ItemType Directory -Path $projRoot -Force | Out-Null
         & $installScript -Target Universal -Scope Project -ProjectRoot $projRoot
@@ -175,7 +175,7 @@ try {
     }
 
     # Test 6: -Overwrite removes stale files in managed skill directory
-    Run-Test "Installer with -Overwrite cleanly removes stale files in managed skills" {
+    Invoke-TestCase "Installer with -Overwrite cleanly removes stale files in managed skills" {
         $projRoot = Join-Path $testRoot "project-stale"
         New-Item -ItemType Directory -Path $projRoot -Force | Out-Null
         & $installScript -Target Universal -Scope Project -ProjectRoot $projRoot
@@ -197,7 +197,7 @@ try {
     }
 
     # Test 7: Preserves non-collection skills with -Overwrite
-    Run-Test "Installer with -Overwrite does not delete non-collection skills" {
+    Invoke-TestCase "Installer with -Overwrite does not delete non-collection skills" {
         $projRoot = Join-Path $testRoot "project-custom"
         New-Item -ItemType Directory -Path $projRoot -Force | Out-Null
         & $installScript -Target Universal -Scope Project -ProjectRoot $projRoot
@@ -214,7 +214,7 @@ try {
     }
 
     # Test 8: unmanaged collisions require a separate explicit force switch
-    Run-Test "Installer refuses to overwrite an unmanaged colliding skill" {
+    Invoke-TestCase "Installer refuses to overwrite an unmanaged colliding skill" {
         $projRoot = Join-Path $testRoot "project-unmanaged"
         $unmanagedSkillDir = Join-Path $projRoot ".agents\skills\analyze-requirement"
         New-Item -ItemType Directory -Path $unmanagedSkillDir -Force | Out-Null
@@ -237,14 +237,14 @@ try {
     }
 
     # Test 9: -WhatIf makes no filesystem modifications
-    Run-Test "-WhatIf preview makes no filesystem changes" {
+    Invoke-TestCase "-WhatIf preview makes no filesystem changes" {
         $userHome = Join-Path $testRoot "user-whatif"
         & $installScript -Target Universal -Scope User -UserHome $userHome -WhatIf
         Assert-True (-not (Test-Path -LiteralPath $userHome)) "Target directory not created during WhatIf"
     }
 
     # Test 10: Direct Codex target installs only to .agents/skills
-    Run-Test "Codex User target installs only to .agents/skills" {
+    Invoke-TestCase "Codex User target installs only to .agents/skills" {
         $userHome = Join-Path $testRoot "user-codex"
         & $installScript -Target Codex -Scope User -UserHome $userHome
 
@@ -255,7 +255,7 @@ try {
     }
 
     # Test 11: Direct OpenCode target installs only to .opencode/skills
-    Run-Test "OpenCode Project target installs to .opencode/skills" {
+    Invoke-TestCase "OpenCode Project target installs to .opencode/skills" {
         $projRoot = Join-Path $testRoot "project-opencode"
         New-Item -ItemType Directory -Path $projRoot -Force | Out-Null
         & $installScript -Target OpenCode -Scope Project -ProjectRoot $projRoot
@@ -266,7 +266,7 @@ try {
     }
 
     # Test 12: -Overwrite at User scope removes stale files
-    Run-Test "Installer with -Overwrite at User scope removes stale files" {
+    Invoke-TestCase "Installer with -Overwrite at User scope removes stale files" {
         $userHome = Join-Path $testRoot "user-stale"
         & $installScript -Target Universal -Scope User -UserHome $userHome
 
@@ -279,7 +279,7 @@ try {
     }
 
     # Test 13: Missing ProjectRoot throws before making changes
-    Run-Test "Installer throws when Scope=Project without ProjectRoot" {
+    Invoke-TestCase "Installer throws when Scope=Project without ProjectRoot" {
         $failed = $false
         try {
             & $installScript -Target Codex -Scope Project
@@ -291,7 +291,7 @@ try {
     }
 
     # Test 14: Nonexistent ProjectRoot throws before making changes
-    Run-Test "Installer throws when ProjectRoot does not exist" {
+    Invoke-TestCase "Installer throws when ProjectRoot does not exist" {
         $nonExistentRoot = Join-Path $testRoot "does-not-exist-root"
         $failed = $false
         try {
@@ -304,7 +304,7 @@ try {
     }
 
     # Test 15: Project scope must not depend on user-home environment variables
-    Run-Test "Project install works without user-home environment variables" {
+    Invoke-TestCase "Project install works without user-home environment variables" {
         $projRoot = Join-Path $testRoot "project-no-home"
         New-Item -ItemType Directory -Path $projRoot -Force | Out-Null
         $savedUserProfileEnv = $env:USERPROFILE
@@ -321,7 +321,7 @@ try {
     }
 
     # Test 16: Validator reports all accumulated errors
-    Run-Test "Validator reports multiple errors in one run" {
+    Invoke-TestCase "Validator reports multiple errors in one run" {
         $fixtureRoot = New-ValidationFixture "validator-multiple-errors"
         $fixtureManifestPath = Join-Path $fixtureRoot "skillset.json"
         $fixtureManifest = Get-Content -LiteralPath $fixtureManifestPath -Raw | ConvertFrom-Json
@@ -338,7 +338,7 @@ try {
     }
 
     # Test 17: Full SemVer prerelease and build metadata are accepted
-    Run-Test "Validator accepts full semantic versions" {
+    Invoke-TestCase "Validator accepts full semantic versions" {
         $fixtureRoot = New-ValidationFixture "validator-semver"
         $validVersion = "1.2.3-alpha-beta.1+build.5"
         foreach ($relativeManifest in @("skillset.json", ".codex-plugin\plugin.json", ".claude-plugin\plugin.json")) {
@@ -353,7 +353,7 @@ try {
     }
 
     # Test 18: Interface fields must actually be nested under interface
-    Run-Test "Validator rejects misplaced OpenAI interface fields" {
+    Invoke-TestCase "Validator rejects misplaced OpenAI interface fields" {
         $fixtureRoot = New-ValidationFixture "validator-openai-yaml"
         $openAiPath = Join-Path $fixtureRoot "skills\analyze-requirement\agents\openai.yaml"
         Set-Content -LiteralPath $openAiPath -Encoding UTF8 -Value @(
@@ -370,7 +370,7 @@ try {
     }
 
     # Test 19: Stack-routing inventory cannot silently fall behind the manifest
-    Run-Test "Validator detects missing stack routing" {
+    Invoke-TestCase "Validator detects missing stack routing" {
         $fixtureRoot = New-ValidationFixture "validator-stack-routing"
         $implementPath = Join-Path $fixtureRoot "skills\implement-change\SKILL.md"
         $implementContent = Get-Content -LiteralPath $implementPath -Raw
@@ -383,7 +383,7 @@ try {
     }
 
     # Test 20: Managed Antigravity installs migrate from the legacy global path
-    Run-Test "Installer safely migrates the legacy Antigravity global path" {
+    Invoke-TestCase "Installer safely migrates the legacy Antigravity global path" {
         $userHome = Join-Path $testRoot "user-antigravity-migration"
         $legacyRoot = Join-Path $userHome ".gemini\antigravity\skills"
         $legacyManagedSkill = Join-Path $legacyRoot "analyze-requirement"
@@ -418,7 +418,7 @@ try {
     }
 
     # Test 21: A collection receipt manages only the skills it explicitly lists
-    Run-Test "Installer treats unlisted colliding skills as unmanaged" {
+    Invoke-TestCase "Installer treats unlisted colliding skills as unmanaged" {
         $projRoot = Join-Path $testRoot "project-partial-receipt"
         $skillsRoot = Join-Path $projRoot ".agents\skills"
         $unlistedSkill = Join-Path $skillsRoot "analyze-requirement"
@@ -446,7 +446,7 @@ try {
     }
 
     # Test 22: A failure during commit restores every path already touched
-    Run-Test "Installer rolls back an interrupted transaction" {
+    Invoke-TestCase "Installer rolls back an interrupted transaction" {
         $projRoot = Join-Path $testRoot "project-rollback"
         New-Item -ItemType Directory -Path $projRoot -Force | Out-Null
         & $installScript -Target Universal -Scope Project -ProjectRoot $projRoot
@@ -468,7 +468,7 @@ try {
     }
 
     # Test 23: Skills dropped from the manifest are removed only when owned by the old receipt
-    Run-Test "Installer removes retired receipt-managed skills" {
+    Invoke-TestCase "Installer removes retired receipt-managed skills" {
         $projRoot = Join-Path $testRoot "project-retired"
         New-Item -ItemType Directory -Path $projRoot -Force | Out-Null
         & $installScript -Target Codex -Scope Project -ProjectRoot $projRoot
@@ -486,7 +486,7 @@ try {
     }
 
     # Test 24: Uninstall removes only receipt-owned content
-    Run-Test "Uninstaller preserves unrelated project content" {
+    Invoke-TestCase "Uninstaller preserves unrelated project content" {
         $projRoot = Join-Path $testRoot "project-uninstall"
         New-Item -ItemType Directory -Path $projRoot -Force | Out-Null
         & $installScript -Target Universal -Scope Project -ProjectRoot $projRoot
@@ -501,7 +501,7 @@ try {
     }
 
     # Test 25: WhatIf is non-mutating for uninstall
-    Run-Test "Uninstaller WhatIf does not remove content" {
+    Invoke-TestCase "Uninstaller WhatIf does not remove content" {
         $projRoot = Join-Path $testRoot "project-uninstall-whatif"
         New-Item -ItemType Directory -Path $projRoot -Force | Out-Null
         & $installScript -Target Codex -Scope Project -ProjectRoot $projRoot
@@ -511,7 +511,7 @@ try {
     }
 
     # Test 26: Invalid receipts never authorize deletion
-    Run-Test "Uninstaller refuses an invalid receipt" {
+    Invoke-TestCase "Uninstaller refuses an invalid receipt" {
         $projRoot = Join-Path $testRoot "project-invalid-uninstall"
         $skillsRoot = Join-Path $projRoot ".agents\skills"
         $custom = Join-Path $skillsRoot "custom-local-skill"
@@ -524,13 +524,13 @@ try {
     }
 
     # Test 27: Behavioral eval fixtures are structurally valid
-    Run-Test "Behavioral eval fixtures validate" {
+    Invoke-TestCase "Behavioral eval fixtures validate" {
         & $validateEvalsScript
         Assert-True ($null -eq $LASTEXITCODE -or $LASTEXITCODE -eq 0) "Eval validator exited with 0"
     }
 
     # Test 28: A malformed pre-existing receipt is an unmanaged collision
-    Run-Test "Installer refuses to replace a malformed receipt" {
+    Invoke-TestCase "Installer refuses to replace a malformed receipt" {
         $projRoot = Join-Path $testRoot "project-malformed-install"
         $skillsRoot = Join-Path $projRoot ".agents\skills"
         New-Item -ItemType Directory -Path $skillsRoot -Force | Out-Null
@@ -543,7 +543,7 @@ try {
     }
 
     # Test 29: An interrupted uninstall restores already quarantined paths
-    Run-Test "Uninstaller rolls back an interrupted transaction" {
+    Invoke-TestCase "Uninstaller rolls back an interrupted transaction" {
         $projRoot = Join-Path $testRoot "project-uninstall-rollback"
         New-Item -ItemType Directory -Path $projRoot -Force | Out-Null
         & $installScript -Target Codex -Scope Project -ProjectRoot $projRoot
@@ -560,7 +560,7 @@ try {
         Assert-True (Test-Path -LiteralPath (Join-Path $projRoot ".agents\skills\.ai-engineering-skills.receipt.json")) "Receipt remains installed"
     }
 
-    Run-Test "Registry metadata rejects null, uppercase, and oversized tags" {
+    Invoke-TestCase "Registry metadata rejects null, uppercase, and oversized tags" {
         $fixtureRoot = New-ValidationFixture "invalid-routing-metadata"
         $fixtureManifestPath = Join-Path $fixtureRoot "skillset.json"
         foreach ($badValue in @('{"tags":null}', '{"appliesTo":null}', '{"tags":["UPPERCASE"]}', '{"tags":["abcdefghijklmnopqrstuvwxyzabcdefg"]}')) {

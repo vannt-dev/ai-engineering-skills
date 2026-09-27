@@ -1,0 +1,19 @@
+# Managed by repokeeper (https://github.com/vannt-dev/repokeeper). Edits are reported by `repokeeper check`. Keys and jobs you add yourself are left alone.
+
+name: ci
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+permissions:
+  contents: read
+jobs:
+  commits:
+    uses: vannt-dev/repokeeper/.github/workflows/commitlint.yml@v0
+  script:
+    uses: vannt-dev/repokeeper/.github/workflows/stack-script.yml@v0
+    with:
+      shell-scripts: "false"
+      powershell-scripts: "true"
+      test-command: ""
