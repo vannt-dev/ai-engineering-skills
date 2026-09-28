@@ -7,6 +7,13 @@ Versioning follows semver against `skillset.json`'s `version` field:
 - **minor** — new skill added, or new optional metadata/target support.
 - **major** — breaking change to `skillset.json` schema, canonical frontmatter, or install layout.
 
+## [1.1.1](https://github.com/vannt-dev/ai-engineering-skills/compare/v1.1.0...v1.1.1) (2026-09-28)
+
+
+### Bug Fixes
+
+* **ci:** decompress the Antigravity installer, which is now served gzip-encoded ([#7](https://github.com/vannt-dev/ai-engineering-skills/issues/7)) ([57fa169](https://github.com/vannt-dev/ai-engineering-skills/commit/57fa1699ef3db3cb1fe194943782b4d59ca53e5d))
+
 ## 1.1.0 - 2026-09-22
 
 - Added explicit freshness guidance for review evidence and two evaluation fixtures for delegated review and stale results.
