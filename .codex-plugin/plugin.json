@@ -8,7 +8,13 @@
   },
   "homepage": "https://github.com/vannt-dev/ai-engineering-skills",
   "repository": "https://github.com/vannt-dev/ai-engineering-skills",
-  "keywords": ["engineering", "polyglot", "review", "testing", "refactoring"],
+  "keywords": [
+    "engineering",
+    "polyglot",
+    "review",
+    "testing",
+    "refactoring"
+  ],
   "skills": "./skills/",
   "interface": {
     "displayName": "AI Engineering Skills",
@@ -16,7 +22,10 @@
     "longDescription": "Analyze, plan, implement, review, test, debug, and refactor software with stack-aware guidance.",
     "developerName": "vannt-dev",
     "category": "Productivity",
-    "capabilities": ["Interactive", "Write"],
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
     "websiteURL": "https://github.com/vannt-dev/ai-engineering-skills",
     "defaultPrompt": [
       "Analyze this requirement before implementation.",
