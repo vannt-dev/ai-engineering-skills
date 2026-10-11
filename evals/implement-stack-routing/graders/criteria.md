@@ -1,3 +1,8 @@
+---
+type: llm
+weight: 1
+---
+
 The response passes when it:
 
 - explicitly applies both Dart/Flutter and database engineering concerns;

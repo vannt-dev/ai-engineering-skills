@@ -1,10 +1,12 @@
 [CmdletBinding()]
-param()
+param(
+    [string]$EvalsRoot
+)
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-$evalsRoot = Join-Path (Split-Path -Parent $PSScriptRoot) "evals"
+$evalsRoot = if ($EvalsRoot) { $EvalsRoot } else { Join-Path (Split-Path -Parent $PSScriptRoot) "evals" }
 $errors = [System.Collections.Generic.List[string]]::new()
 if (-not (Test-Path -LiteralPath $evalsRoot -PathType Container)) {
     throw "Evals directory does not exist: $evalsRoot"
@@ -25,6 +27,20 @@ foreach ($case in $cases) {
     if ($graders.Count -eq 0) { $errors.Add("Eval '$($case.Name)' has no Markdown grader.") }
     foreach ($grader in $graders) {
         if ((Get-Content -LiteralPath $grader.FullName -Raw).Trim().Length -lt 80) { $errors.Add("Eval grader '$($grader.FullName)' is too short to be meaningful.") }
+        # `claude plugin eval` refuses a grader with no frontmatter ("graders: Required"), and the
+        # paid eval run is not part of CI, so the structure is checked here.
+        $graderLines = @(Get-Content -LiteralPath $grader.FullName)
+        $frontmatter = @()
+        if ($graderLines.Count -gt 2 -and $graderLines[0].Trim() -eq '---') {
+            for ($index = 1; $index -lt $graderLines.Count; $index++) {
+                if ($graderLines[$index].Trim() -eq '---') { break }
+                $frontmatter += $graderLines[$index]
+            }
+            if ($index -ge $graderLines.Count) { $frontmatter = @() }
+        }
+        if (@($frontmatter | Where-Object { $_ -match '^type:\s*\S' }).Count -eq 0) {
+            $errors.Add("Eval grader '$($grader.FullName)' needs YAML frontmatter with a 'type' field (for example 'type: llm'); the eval runner cannot load it otherwise.")
+        }
     }
 }
 

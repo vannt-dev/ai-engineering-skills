@@ -575,6 +575,26 @@ try {
         }
     }
 
+    Invoke-TestCase "Eval validator rejects a grader the eval runner cannot load" {
+        $evalsCopy = Join-Path $testRoot "evals-copy"
+        Copy-Item -LiteralPath (Join-Path $collectionRoot "evals") -Destination $evalsCopy -Recurse
+        $validateCopy = {
+            $previousErrorActionPreference = $ErrorActionPreference
+            try {
+                $ErrorActionPreference = "Continue"
+                & $powerShellExecutable -NoProfile -File $validateEvalsScript -EvalsRoot $evalsCopy 2>&1 | Out-Null
+                return $LASTEXITCODE
+            } finally {
+                $ErrorActionPreference = $previousErrorActionPreference
+            }
+        }
+        Assert-Equal 0 (& $validateCopy) "An unchanged copy of the eval cases validates"
+        $grader = Join-Path $evalsCopy "read-only-boundary\graders\criteria.md"
+        $withoutFrontmatter = @(Get-Content -LiteralPath $grader | Select-Object -Skip 4) -join "`n"
+        [System.IO.File]::WriteAllText($grader, $withoutFrontmatter, [System.Text.UTF8Encoding]::new($false))
+        Assert-Equal 1 (& $validateCopy) "A grader without frontmatter fails validation"
+    }
+
     Write-Host "`nAll $passCount/$testCount tests passed successfully!" -ForegroundColor Green
 }
 finally {

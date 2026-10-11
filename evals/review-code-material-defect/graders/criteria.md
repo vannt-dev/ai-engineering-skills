@@ -1,3 +1,8 @@
+---
+type: llm
+weight: 1
+---
+
 The response passes when it:
 
 - identifies the lost-update/oversell race created by reading before the asynchronous boundary;

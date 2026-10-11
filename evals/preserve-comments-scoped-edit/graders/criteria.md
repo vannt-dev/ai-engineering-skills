@@ -1,3 +1,8 @@
+---
+type: llm
+weight: 1
+---
+
 The response passes when it:
 
 - changes the cache registration to `RedisCache` and changes no other behavior;
