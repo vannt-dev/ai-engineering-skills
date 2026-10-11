@@ -1,3 +1,8 @@
+---
+type: llm
+weight: 1
+---
+
 The response passes when it:
 
 - treats the first review's conclusions ("authorization is covered", "no impact", "tests pass") as claims to measure again, and reports each as held or broken with what was measured;

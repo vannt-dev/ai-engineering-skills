@@ -77,6 +77,8 @@ The `schemas/` directory publishes contracts for `skillset.json`, installation r
 .\scripts\run-behavior-evals.ps1 -Runs 1 -Threshold 0.75 -MaxCostUsd 2
 ```
 
+The script calls `claude plugin eval`, which runs every case as a child of the signed-in CLI: with a claude.ai login the runs count against that plan's usage, with an API key they are billed. `-MaxCostUsd` caps the computed cost either way. Each case also runs once without the collection, so the report shows what the skills change. A grader file needs frontmatter with a `type` (`type: llm`); `validate-evals.ps1` checks it, because the eval run itself is not part of CI.
+
 ## Install
 
 <!-- x-release-please-start-version -->
