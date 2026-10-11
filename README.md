@@ -79,6 +79,11 @@ The `schemas/` directory publishes contracts for `skillset.json`, installation r
 
 The script calls `claude plugin eval`, which runs every case as a child of the signed-in CLI: with a claude.ai login the runs count against that plan's usage, with an API key they are billed. `-MaxCostUsd` caps the computed cost either way. Each case also runs once without the collection, so the report shows what the skills change. A grader file needs frontmatter with a `type` (`type: llm`); `validate-evals.ps1` checks it, because the eval run itself is not part of CI.
 
+Two things to know when reading the results:
+
+- A `skill-opened` grader (`type: tool_used`, `tool: Skill`) is an indicator, not part of the score: it shows whether the run opened a skill at all. A case in which no skill was opened compares the model with itself, so it cannot show what the collection adds.
+- Each run works in an empty folder and cannot read files outside it. A skill's own `references/` files are out of reach there, although an installed copy reads them normally, so a case that depends on a reference file is weaker in the eval than in use.
+
 ## Install
 
 <!-- x-release-please-start-version -->
