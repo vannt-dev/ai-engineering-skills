@@ -1,0 +1,4 @@
+interface:
+  display_name: "Preserve Comments"
+  short_description: "Keep existing comments intact while editing code"
+  default_prompt: "Use $preserve-comments to make this change without losing the existing comments."

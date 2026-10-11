@@ -109,15 +109,15 @@ class SiteChecks(unittest.TestCase):
             self.page.get_by_role("heading", name="No matching skills.").is_visible()
         )
         self.page.get_by_role("button", name="Reset filters").click()
-        self.assertEqual(15, self.page.locator("[data-skill]:visible").count())
+        self.assertEqual(17, self.page.locator("[data-skill]:visible").count())
         self.assertEqual(
             "true",
-            self.page.get_by_role("button", name="All skills 15").get_attribute(
+            self.page.get_by_role("button", name="All skills 17").get_attribute(
                 "aria-pressed"
             ),
         )
-        self.page.get_by_role("button", name="Workflow 8", exact=True).click()
-        self.assertEqual(8, self.page.locator("[data-skill]:visible").count())
+        self.page.get_by_role("button", name="Workflow 10", exact=True).click()
+        self.assertEqual(10, self.page.locator("[data-skill]:visible").count())
 
     def test_install_commands_for_supported_tools_and_scopes(self) -> None:
         for tool in ("Universal", "Codex", "Claude", "OpenCode", "Antigravity"):
@@ -206,7 +206,7 @@ class SiteChecks(unittest.TestCase):
         try:
             page = context.new_page()
             page.goto(self.url)
-            self.assertEqual(15, page.locator("[data-skill]:visible").count())
+            self.assertEqual(17, page.locator("[data-skill]:visible").count())
             self.assertTrue(page.locator("#install-command").is_visible())
             self.assertIn("-WhatIf", page.locator("#install-command").inner_text())
             self.assertFalse(page.locator("#copy-command").is_visible())

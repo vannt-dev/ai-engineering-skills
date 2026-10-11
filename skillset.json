@@ -10,6 +10,8 @@
     { "name": "debug-issue", "category": "workflow", "tags": ["debugging"] },
     { "name": "safe-refactor", "category": "workflow", "tags": ["refactoring"] },
     { "name": "checkpoint-progress", "category": "workflow", "tags": ["handoff"] },
+    { "name": "challenge-review", "category": "workflow", "tags": ["review", "quality", "security"] },
+    { "name": "preserve-comments", "category": "workflow", "tags": ["editing", "comments"] },
     {
       "name": "dotnet-engineering",
       "category": "stack",

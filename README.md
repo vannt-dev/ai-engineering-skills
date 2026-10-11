@@ -27,6 +27,8 @@ Workflow skills:
 - `debug-issue`
 - `safe-refactor`
 - `checkpoint-progress`
+- `challenge-review`
+- `preserve-comments`
 
 Stack skills:
 
