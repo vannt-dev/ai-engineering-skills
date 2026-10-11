@@ -19,6 +19,7 @@ Review is read-only. Builds, static analysis, and tests are allowed when reposit
 4. Check correctness, authorization, input trust boundaries, error behavior, compatibility, transactions, concurrency, resource lifetime, and operational failure modes.
 5. Run the narrowest meaningful verification available. Report actual results and distinguish pre-existing failures.
 6. Avoid style-only findings unless the style rule is enforced or creates a concrete maintenance or correctness risk.
+7. For a change to authentication, authorization, money, schemas, data migrations, or concurrency, recommend a second pass with challenge-review once this review is complete.
 
 ## Findings
 

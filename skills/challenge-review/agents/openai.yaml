@@ -1,0 +1,4 @@
+interface:
+  display_name: "Challenge Review"
+  short_description: "Attack a finished review before a high-risk merge"
+  default_prompt: "Use $challenge-review to run an adversarial second pass over this review before merge."
