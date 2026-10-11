@@ -2,57 +2,174 @@
   "schemaVersion": 2,
   "version": "1.1.0",
   "skills": [
-    { "name": "analyze-requirement", "category": "workflow", "tags": ["requirements"] },
-    { "name": "plan-change", "category": "workflow", "tags": ["planning"] },
-    { "name": "implement-change", "category": "workflow", "tags": ["implementation"] },
-    { "name": "review-code", "category": "workflow", "tags": ["review", "quality"] },
-    { "name": "test-change", "category": "workflow", "tags": ["testing", "quality"] },
-    { "name": "debug-issue", "category": "workflow", "tags": ["debugging"] },
-    { "name": "safe-refactor", "category": "workflow", "tags": ["refactoring"] },
-    { "name": "checkpoint-progress", "category": "workflow", "tags": ["handoff"] },
-    { "name": "challenge-review", "category": "workflow", "tags": ["review", "quality", "security"] },
-    { "name": "preserve-comments", "category": "workflow", "tags": ["editing", "comments"] },
+    {
+      "name": "analyze-requirement",
+      "category": "workflow",
+      "tags": [
+        "requirements"
+      ]
+    },
+    {
+      "name": "plan-change",
+      "category": "workflow",
+      "tags": [
+        "planning"
+      ]
+    },
+    {
+      "name": "implement-change",
+      "category": "workflow",
+      "tags": [
+        "implementation"
+      ]
+    },
+    {
+      "name": "review-code",
+      "category": "workflow",
+      "tags": [
+        "review",
+        "quality"
+      ]
+    },
+    {
+      "name": "test-change",
+      "category": "workflow",
+      "tags": [
+        "testing",
+        "quality"
+      ]
+    },
+    {
+      "name": "debug-issue",
+      "category": "workflow",
+      "tags": [
+        "debugging"
+      ]
+    },
+    {
+      "name": "safe-refactor",
+      "category": "workflow",
+      "tags": [
+        "refactoring"
+      ]
+    },
+    {
+      "name": "checkpoint-progress",
+      "category": "workflow",
+      "tags": [
+        "handoff"
+      ]
+    },
+    {
+      "name": "challenge-review",
+      "category": "workflow",
+      "tags": [
+        "review",
+        "quality",
+        "security"
+      ]
+    },
+    {
+      "name": "preserve-comments",
+      "category": "workflow",
+      "tags": [
+        "editing",
+        "comments"
+      ]
+    },
     {
       "name": "dotnet-engineering",
       "category": "stack",
-      "appliesTo": ["**/*.cs", "**/*.csproj", "**/*.sln", "**/*.slnx", "**/Directory.Build.props"],
-      "tags": ["dotnet", "backend"]
+      "appliesTo": [
+        "**/*.cs",
+        "**/*.csproj",
+        "**/*.sln",
+        "**/*.slnx",
+        "**/Directory.Build.props"
+      ],
+      "tags": [
+        "dotnet",
+        "backend"
+      ]
     },
     {
       "name": "java-engineering",
       "category": "stack",
-      "appliesTo": ["**/*.java", "**/pom.xml", "**/build.gradle", "**/build.gradle.kts"],
-      "tags": ["java", "backend"]
+      "appliesTo": [
+        "**/*.java",
+        "**/pom.xml",
+        "**/build.gradle",
+        "**/build.gradle.kts"
+      ],
+      "tags": [
+        "java",
+        "backend"
+      ]
     },
     {
       "name": "go-engineering",
       "category": "stack",
-      "appliesTo": ["**/*.go", "**/go.mod"],
-      "tags": ["go", "backend"]
+      "appliesTo": [
+        "**/*.go",
+        "**/go.mod"
+      ],
+      "tags": [
+        "go",
+        "backend"
+      ]
     },
     {
       "name": "python-engineering",
       "category": "stack",
-      "appliesTo": ["**/*.py", "**/pyproject.toml", "**/requirements*.txt"],
-      "tags": ["python", "backend"]
+      "appliesTo": [
+        "**/*.py",
+        "**/pyproject.toml",
+        "**/requirements*.txt"
+      ],
+      "tags": [
+        "python",
+        "backend"
+      ]
     },
     {
       "name": "typescript-engineering",
       "category": "stack",
-      "appliesTo": ["**/*.ts", "**/*.tsx", "**/tsconfig*.json"],
-      "tags": ["typescript", "frontend", "backend"]
+      "appliesTo": [
+        "**/*.ts",
+        "**/*.tsx",
+        "**/tsconfig*.json"
+      ],
+      "tags": [
+        "typescript",
+        "frontend",
+        "backend"
+      ]
     },
     {
       "name": "database-engineering",
       "category": "stack",
-      "appliesTo": ["**/*.sql", "**/migrations/**", "**/db/**"],
-      "tags": ["database", "backend"]
+      "appliesTo": [
+        "**/*.sql",
+        "**/migrations/**",
+        "**/db/**"
+      ],
+      "tags": [
+        "database",
+        "backend"
+      ]
     },
     {
       "name": "dart-engineering",
       "category": "stack",
-      "appliesTo": ["**/*.dart", "**/pubspec.yaml"],
-      "tags": ["dart", "flutter", "frontend"]
+      "appliesTo": [
+        "**/*.dart",
+        "**/pubspec.yaml"
+      ],
+      "tags": [
+        "dart",
+        "flutter",
+        "frontend"
+      ]
     }
   ]
 }
