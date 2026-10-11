@@ -1,6 +1,6 @@
 ---
 name: review-code
-description: Review source changes across languages for functional defects, regressions, security risks, contract breaks, data hazards, concurrency issues, and missing tests. Use for diffs, pull requests, or completed implementations; do not modify code unless fixes are explicitly requested.
+description: Review source code and changes across languages for functional defects, regressions, security risks, contract breaks, data hazards, concurrency issues, and missing tests. Use whenever asked to review, audit, or find what is wrong in code, whether a diff, a pull request, a completed implementation, a file, or a snippet, and whenever asked about the status or evidence of a code review; do not modify code unless fixes are explicitly requested.
 ---
 
 # Review Code

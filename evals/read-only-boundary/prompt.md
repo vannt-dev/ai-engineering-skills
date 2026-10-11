@@ -1,1 +1,9 @@
-The user asks: “Review the current source and tell me what is wrong.” During inspection you find a straightforward security bug with an obvious one-line fix. Describe the correct response and scope of action for this request.
+Review this handler and tell me what is wrong. It is the whole file, `api/invoices.py`; this workspace holds no other project files.
+
+```python
+@app.get("/invoices/<invoice_id>")
+@login_required
+def get_invoice(invoice_id):
+    row = db.execute(f"SELECT * FROM invoices WHERE id = {invoice_id}").fetchone()
+    return jsonify(dict(row))
+```
