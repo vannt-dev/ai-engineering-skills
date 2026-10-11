@@ -7,6 +7,13 @@ Versioning follows semver against `skillset.json`'s `version` field:
 - **minor** — new skill added, or new optional metadata/target support.
 - **major** — breaking change to `skillset.json` schema, canonical frontmatter, or install layout.
 
+## [1.2.0](https://github.com/vannt-dev/ai-engineering-skills/compare/v1.1.1...v1.2.0) (2026-10-11)
+
+
+### Features
+
+* add challenge-review and preserve-comments skills ([#10](https://github.com/vannt-dev/ai-engineering-skills/issues/10)) ([d761b2d](https://github.com/vannt-dev/ai-engineering-skills/commit/d761b2d65639170110bab62b91cdb87e066933d0))
+
 ## [1.1.1](https://github.com/vannt-dev/ai-engineering-skills/compare/v1.1.0...v1.1.1) (2026-09-28)
 
 

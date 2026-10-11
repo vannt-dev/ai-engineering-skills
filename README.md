@@ -81,19 +81,19 @@ The `schemas/` directory publishes contracts for `skillset.json`, installation r
 
 <!-- x-release-please-start-version -->
 
-Download the [1.1.0 release][release]
+Download the [1.2.0 release][release]
 and extract it, or check out the versioned source:
 
 ```bash
-git clone --branch v1.1.0 --depth 1 https://github.com/vannt-dev/ai-engineering-skills.git
+git clone --branch v1.2.0 --depth 1 https://github.com/vannt-dev/ai-engineering-skills.git
 cd ai-engineering-skills
 ```
 
 Run the commands below from the extracted collection directory. For an existing managed
 installation, run the installer from this version with `-Overwrite`; preview first with `-WhatIf`.
-The receipt records version 1.1.0. Unrelated skills are preserved.
+The receipt records version 1.2.0. Unrelated skills are preserved.
 
-[release]: https://github.com/vannt-dev/ai-engineering-skills/releases/tag/v1.1.0
+[release]: https://github.com/vannt-dev/ai-engineering-skills/releases/tag/v1.2.0
 
 <!-- x-release-please-end -->
 
