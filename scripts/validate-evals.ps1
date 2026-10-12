@@ -12,7 +12,8 @@ if (-not (Test-Path -LiteralPath $evalsRoot -PathType Container)) {
     throw "Evals directory does not exist: $evalsRoot"
 }
 
-$cases = @(Get-ChildItem -LiteralPath $evalsRoot -Directory)
+# `claude plugin eval` writes its reports to evals/results/; that folder is not a case.
+$cases = @(Get-ChildItem -LiteralPath $evalsRoot -Directory | Where-Object { $_.Name -ne "results" })
 if ($cases.Count -lt 4) { $errors.Add("Expected at least 4 behavioral eval cases, found $($cases.Count).") }
 foreach ($case in $cases) {
     if ($case.Name -notmatch '^[a-z0-9]+(?:-[a-z0-9]+)*$') { $errors.Add("Invalid eval case name: '$($case.Name)'.") }

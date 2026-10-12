@@ -74,12 +74,17 @@ The validators have no Python or third-party module dependency. They validate th
 The `schemas/` directory publishes contracts for `skillset.json`, installation receipts, and both plugin metadata formats. Behavioral cases live under `evals/`. To execute them with Claude Code, an authenticated CLI, and an explicit cost ceiling:
 
 ```powershell
-.\scripts\run-behavior-evals.ps1 -Runs 1 -Threshold 0.75 -MaxCostUsd 2
+.\scripts\run-behavior-evals.ps1
+.\scripts\run-behavior-evals.ps1 -Case "review-*" -JudgeModel sonnet -MaxCostUsd 2
 ```
 
-The script calls `claude plugin eval`, which runs every case as a child of the signed-in CLI: with a claude.ai login the runs count against that plan's usage, with an API key they are billed. `-MaxCostUsd` caps the computed cost either way. Each case also runs once without the collection, so the report shows what the skills change. A grader file needs frontmatter with a `type` (`type: llm`); `validate-evals.ps1` checks it, because the eval run itself is not part of CI.
+With no arguments the script runs every case three times (`-Runs 3`), passes a case when two of its three runs pass (`-Threshold 0.6`), and stops at USD 6 (`-MaxCostUsd 6`). `-Case` takes a glob of case names; `-JudgeModel` names the model that grades the answers, which is the CLI's own choice otherwise.
 
-Two things to know when reading the results:
+The script calls `claude plugin eval`, which runs every case as a child of the signed-in CLI: with a claude.ai login the runs count against that plan's usage, with an API key they are billed. `-MaxCostUsd` caps the computed cost either way. Each case runs the same number of times without the collection, so the report shows what the skills change. The report goes to `evals/results/`, which git ignores. A grader file needs frontmatter with a `type` (`type: llm`); `validate-evals.ps1` checks it, because the eval run itself is not part of CI.
+
+Three things to know when reading the results:
+
+- One run of a case is not a verdict. Each answer is graded by three votes of the judge, and the default judge split its votes on about one grading in ten (5 of 48 in a run of the whole suite); at one run per case, a split decides the case. Three runs settle it, which is why they are the default: about USD 0.5 for a case, USD 4 for the eight cases. `-JudgeModel sonnet` gave no split vote in 18 gradings, at under two cents a grading, but it reads a criterion to the letter: it failed `read-only-boundary` three times of three over a side remark that carried no category label, until the criterion said that only the two named defects are judged on their labels. Write a criterion so that a strict reader and a lenient one reach the same verdict, and say what is not judged.
 
 - A `skill-opened` grader (`type: tool_used`, `tool: Skill`) is an indicator, not part of the score: it shows whether the run opened a skill at all. A case in which no skill was opened compares the model with itself, so it cannot show what the collection adds.
 - Each run works in an empty folder and cannot read files outside it. A skill's own `references/` files are out of reach there, although an installed copy reads them normally, so a case that depends on a reference file is weaker in the eval than in use.
