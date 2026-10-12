@@ -10,6 +10,7 @@ $validateScript = Join-Path $scriptsDir "validate-skills.ps1"
 $installScript = Join-Path $scriptsDir "install-skills.ps1"
 $uninstallScript = Join-Path $scriptsDir "uninstall-skills.ps1"
 $validateEvalsScript = Join-Path $scriptsDir "validate-evals.ps1"
+$runEvalsScript = Join-Path $scriptsDir "run-behavior-evals.ps1"
 $manifest = Get-Content -LiteralPath (Join-Path $collectionRoot "skillset.json") -Raw | ConvertFrom-Json
 $expectedSkillCount = @($manifest.skills).Count
 $powerShellExecutable = (Get-Process -Id $PID).Path
@@ -593,6 +594,45 @@ try {
         $withoutFrontmatter = @(Get-Content -LiteralPath $grader | Select-Object -Skip 4) -join "`n"
         [System.IO.File]::WriteAllText($grader, $withoutFrontmatter, [System.Text.UTF8Encoding]::new($false))
         Assert-Equal 1 (& $validateCopy) "A grader without frontmatter fails validation"
+    }
+
+    Invoke-TestCase "Eval validator leaves the eval runner's results folder alone" {
+        $evalsCopy = Join-Path $testRoot "evals-with-results"
+        Copy-Item -LiteralPath (Join-Path $collectionRoot "evals") -Destination $evalsCopy -Recurse
+        # Where `claude plugin eval` writes its report: beside the cases, and not a case.
+        $run = Join-Path $evalsCopy "results\2026-10-12T13-56-30-356Z"
+        New-Item -ItemType Directory -Path $run -Force | Out-Null
+        Set-Content -LiteralPath (Join-Path $run "report.html") -Value "<html></html>"
+        $previousErrorActionPreference = $ErrorActionPreference
+        try {
+            $ErrorActionPreference = "Continue"
+            & $powerShellExecutable -NoProfile -File $validateEvalsScript -EvalsRoot $evalsCopy 2>&1 | Out-Null
+            $exitCode = $LASTEXITCODE
+        } finally {
+            $ErrorActionPreference = $previousErrorActionPreference
+        }
+        Assert-Equal 0 $exitCode "Eval cases with a results folder beside them validate"
+    }
+
+    Invoke-TestCase "Eval runner hands its settings to the eval command" {
+        # A stand-in for the CLI, found before any installed one: it prints what it is given.
+        function claude {
+            "eval command: $($args -join ' ')"
+            $global:LASTEXITCODE = 0
+        }
+        $given = { param($Output) @($Output | Where-Object { "$_".StartsWith("eval command: ") })[0] }
+
+        $defaults = & $given (& $runEvalsScript 3>$null)
+        Assert-True ($defaults -match " plugin eval ") "The eval command is called: $defaults"
+        Assert-True ($defaults -match " --runs 3( |$)") "Three runs per case unless told otherwise: $defaults"
+        Assert-True ($defaults -match " --threshold 0\.6( |$)") "Two runs of three pass a case: $defaults"
+        Assert-True ($defaults -notmatch "--judge-model") "The judge stays the CLI's own unless one is named"
+        Assert-True ($defaults -notmatch "--case") "Every case runs unless some are named"
+
+        $chosen = & $given (& $runEvalsScript -Runs 5 -JudgeModel sonnet -Case "read-only-*" 3>$null)
+        Assert-True ($chosen -match " --runs 5( |$)") "The number of runs is passed on: $chosen"
+        Assert-True ($chosen -match " --judge-model sonnet( |$)") "The judge model is passed on: $chosen"
+        Assert-True ($chosen -match " --case read-only-\*( |$)") "The case filter is passed on: $chosen"
     }
 
     Write-Host "`nAll $passCount/$testCount tests passed successfully!" -ForegroundColor Green

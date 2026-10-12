@@ -1,8 +1,15 @@
 [CmdletBinding()]
 param(
-    [ValidateRange(1, 10)][int]$Runs = 1,
-    [ValidateRange(0.0, 1.0)][double]$Threshold = 0.75,
-    [ValidateRange(0.01, 100.0)][double]$MaxCostUsd = 2.00
+    # Three runs settle a case: at one run a single split vote of the judge decides it.
+    [ValidateRange(1, 10)][int]$Runs = 3,
+    # The share of a case's runs that must pass; 0.6 is two runs of three.
+    [ValidateRange(0.0, 1.0)][double]$Threshold = 0.6,
+    # Three runs of every case, with and without the collection, came to about USD 4.
+    [ValidateRange(0.01, 100.0)][double]$MaxCostUsd = 6.00,
+    # The model that grades the answers; the CLI's own choice when not given.
+    [string]$JudgeModel,
+    # Only the cases whose name matches this glob, for example "review-*".
+    [string]$Case
 )
 
 Set-StrictMode -Version Latest
@@ -14,6 +21,10 @@ if (-not (Get-Command claude -ErrorAction SilentlyContinue)) {
     throw "Claude Code CLI is required to execute behavioral evals."
 }
 
+$evalArguments = @($collectionRoot, "--no-publish", "--runs", $Runs, "--threshold", $Threshold, "--max-cost-usd", $MaxCostUsd)
+if ($JudgeModel) { $evalArguments += @("--judge-model", $JudgeModel) }
+if ($Case) { $evalArguments += @("--case", $Case) }
+
 Write-Warning "This command invokes a model and may incur up to USD $MaxCostUsd in usage."
-& claude plugin eval $collectionRoot --no-publish --runs $Runs --threshold $Threshold --max-cost-usd $MaxCostUsd
+& claude plugin eval @evalArguments
 if ($LASTEXITCODE -ne 0) { throw "Claude behavioral evals failed with exit code $LASTEXITCODE." }
