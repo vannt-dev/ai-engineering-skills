@@ -1,0 +1,15 @@
+{
+  "name": "ai-engineering-skills",
+  "owner": { "name": "vannt-dev", "url": "https://github.com/vannt-dev" },
+  "metadata": {
+    "description": "Portable software-engineering workflows and stack guidance for Claude Code."
+  },
+  "plugins": [
+    {
+      "name": "ai-engineering-skills",
+      "source": "./",
+      "description": "10 workflow skills and 7 stack skills for polyglot projects: requirements, planning, implementation, testing, review, refactoring, debugging.",
+      "category": "development"
+    }
+  ]
+}

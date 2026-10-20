@@ -59,7 +59,7 @@ In a polyglot repository, use the workflow skill that matches the task together 
 
 [OpenCode V2](https://opencode.ai/v2/docs/skills) recursively discovers `SKILL.md` files below `.claude/skills`, so it may also see the Claude plugin copies during a Universal installation. It resolves those duplicate IDs by source precedence, with `.agents/skills` taking precedence over `.claude/skills`. Use the direct `OpenCode` target when a single discovery source is required.
 
-The repository contains `.codex-plugin/plugin.json` and `.claude-plugin/plugin.json` so it can also be packaged natively for Codex or Claude Code.
+The repository contains `.codex-plugin/plugin.json` and `.claude-plugin/plugin.json` so it can also be packaged natively for Codex or Claude Code, and `.claude-plugin/marketplace.json` so Claude Code can [install it as a plugin](#install-in-claude-code) straight from GitHub.
 
 ## Validate
 
@@ -69,7 +69,7 @@ The repository contains `.codex-plugin/plugin.json` and `.claude-plugin/plugin.j
 .\scripts\test-tooling.ps1
 ```
 
-The validators have no Python or third-party module dependency. They validate the intentionally restricted portable frontmatter schema, optional Codex UI metadata, reference links, collection manifest, duplicate names, plugin manifests, published JSON Schemas, and behavioral eval fixture structure.
+The validators have no Python or third-party module dependency. They validate the intentionally restricted portable frontmatter schema, optional Codex UI metadata, reference links, collection manifest, duplicate names, plugin manifests, the Claude Code marketplace, published JSON Schemas, and behavioral eval fixture structure.
 
 The `schemas/` directory publishes contracts for `skillset.json`, installation receipts, and both plugin metadata formats. Behavioral cases live under `evals/`. To execute them with Claude Code, an authenticated CLI, and an explicit cost ceiling:
 
@@ -90,6 +90,34 @@ Three things to know when reading the results:
 - Each run works in an empty folder and cannot read files outside it. A skill's own `references/` files are out of reach there, although an installed copy reads them normally, so a case that depends on a reference file is weaker in the eval than in use.
 
 ## Install
+
+### Install in Claude Code
+
+Claude Code installs the collection as a plugin from this repository's marketplace, with no clone
+and no PowerShell. Inside Claude Code:
+
+```text
+/plugin marketplace add vannt-dev/ai-engineering-skills
+/plugin install ai-engineering-skills@ai-engineering-skills
+```
+
+From a terminal, the same steps are `claude plugin marketplace add vannt-dev/ai-engineering-skills`
+and `claude plugin install ai-engineering-skills@ai-engineering-skills`. On Claude Code 2.1.275 or
+later one line does both:
+
+```text
+/plugin install ai-engineering-skills --marketplace vannt-dev/ai-engineering-skills
+```
+
+All 17 skills load as `ai-engineering-skills:<skill>`. `/plugin update ai-engineering-skills@ai-engineering-skills`
+picks up a new release and `/plugin uninstall ai-engineering-skills@ai-engineering-skills` removes it.
+If you installed the collection for Claude Code with the PowerShell installer before, remove that
+copy with the uninstaller below so the skills are not loaded twice.
+
+### Install with the PowerShell installer
+
+Use the installer for Codex, OpenCode and Antigravity, for project scope, or for Claude Code
+without a marketplace.
 
 <!-- x-release-please-start-version -->
 

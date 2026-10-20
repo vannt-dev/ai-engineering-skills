@@ -41,6 +41,12 @@ try {
         if ($RequireCommand -eq "Claude") {
             & claude plugin validate --strict (Join-Path $userHome ".claude\skills\ai-engineering-skills")
             if ($LASTEXITCODE -ne 0) { throw "Claude rejected the installed plugin." }
+            # Validating a folder that holds marketplace.json checks only the marketplace, so name each file.
+            $collectionRoot = Split-Path -Parent $PSScriptRoot
+            foreach ($manifest in @("plugin.json", "marketplace.json")) {
+                & claude plugin validate --strict (Join-Path $collectionRoot ".claude-plugin\$manifest")
+                if ($LASTEXITCODE -ne 0) { throw "Claude rejected .claude-plugin/$manifest." }
+            }
         }
     }
 

@@ -757,6 +757,14 @@ h1 em,h2 em {
   font: 11px/2 var(--mono);
   min-height: 112px
 }
+.plugin-install {
+  margin-bottom: 26px;
+  padding-bottom: 26px;
+  border-bottom: 1px solid var(--line)
+}
+.plugin-install .terminal pre {
+  min-height: 0
+}
 .copy-status {
   font-size: 11px;
   color: var(--green);
