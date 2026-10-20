@@ -9,6 +9,7 @@ $skillsRoot = Join-Path $collectionRoot "skills"
 $manifestPath = Join-Path $collectionRoot "skillset.json"
 $codexManifestPath = Join-Path $collectionRoot ".codex-plugin\plugin.json"
 $claudeManifestPath = Join-Path $collectionRoot ".claude-plugin\plugin.json"
+$claudeMarketplacePath = Join-Path $collectionRoot ".claude-plugin\marketplace.json"
 $schemasRoot = Join-Path $collectionRoot "schemas"
 
 $errors = [System.Collections.Generic.List[string]]::new()
@@ -203,6 +204,43 @@ if (Test-Path -LiteralPath $claudeManifestPath -PathType Leaf) {
     }
 } else {
     $errors.Add("Missing .claude-plugin/plugin.json")
+}
+
+# The Claude Code marketplace lists this collection as one plugin rooted at the repository, so
+# `/plugin install ai-engineering-skills@ai-engineering-skills` loads skills/ from the root.
+# The version stays in plugin.json only, where release-please bumps it.
+if (Test-Path -LiteralPath $claudeMarketplacePath -PathType Leaf) {
+    try {
+        $marketplace = Get-Content -LiteralPath $claudeMarketplacePath -Raw | ConvertFrom-Json
+        $marketplaceName = Get-PropertyValue $marketplace "name"
+        $marketplacePlugins = @(Get-PropertyValue $marketplace "plugins")
+        if ($marketplaceName -ne "ai-engineering-skills") {
+            $errors.Add(".claude-plugin/marketplace.json name must be 'ai-engineering-skills', found: '$marketplaceName'")
+        }
+        if (-not (Get-PropertyValue (Get-PropertyValue $marketplace "owner") "name")) {
+            $errors.Add(".claude-plugin/marketplace.json is missing owner.name")
+        }
+        if ($marketplacePlugins.Count -ne 1 -or -not $marketplacePlugins[0]) {
+            $errors.Add(".claude-plugin/marketplace.json must list exactly one plugin, found: $($marketplacePlugins.Count)")
+        } else {
+            $entry = $marketplacePlugins[0]
+            $entryName = Get-PropertyValue $entry "name"
+            $entrySource = Get-PropertyValue $entry "source"
+            if ($entryName -ne "ai-engineering-skills") {
+                $errors.Add(".claude-plugin/marketplace.json plugin name must be 'ai-engineering-skills', found: '$entryName'")
+            }
+            if ($entrySource -notin @(".", "./")) {
+                $errors.Add(".claude-plugin/marketplace.json plugin source must be the repository root ('./'), found: '$entrySource'")
+            }
+            if ($null -ne (Get-PropertyValue $entry "version")) {
+                $errors.Add(".claude-plugin/marketplace.json plugin entry must not set 'version'; plugin.json holds it")
+            }
+        }
+    } catch {
+        $errors.Add("Failed to parse .claude-plugin/marketplace.json: $($_.Exception.Message)")
+    }
+} else {
+    $errors.Add("Missing .claude-plugin/marketplace.json")
 }
 
 # 4. Helper function to test markdown relative links

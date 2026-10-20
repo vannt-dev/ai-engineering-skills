@@ -383,6 +383,25 @@ try {
         Assert-True ($result.Output -match "does not mention stack skill 'dart-engineering'") "Output identifies missing Dart routing"
     }
 
+    # Test 19b: The Claude Code marketplace must install the repository root as the plugin
+    Invoke-TestCase "Validator rejects a marketplace that would not install the collection" {
+        $fixtureRoot = New-ValidationFixture "validator-marketplace"
+        $marketplacePath = Join-Path $fixtureRoot ".claude-plugin\marketplace.json"
+        $marketplace = Get-Content -LiteralPath $marketplacePath -Raw | ConvertFrom-Json
+        $marketplace.plugins[0].source = "./skills"
+        $marketplace.plugins[0] | Add-Member -NotePropertyName version -NotePropertyValue "0.0.1"
+        [System.IO.File]::WriteAllText($marketplacePath, ($marketplace | ConvertTo-Json -Depth 10), [System.Text.UTF8Encoding]::new($false))
+
+        $result = Invoke-ValidatorProcess $fixtureRoot
+        Assert-Equal 1 $result.ExitCode "Invalid marketplace fails validation"
+        Assert-True ($result.Output -match "plugin source must be the repository root") "Output names the wrong source"
+        Assert-True ($result.Output -match "must not set 'version'") "Output names the duplicated version"
+
+        Remove-Item -LiteralPath $marketplacePath -Force
+        $result = Invoke-ValidatorProcess $fixtureRoot
+        Assert-True ($result.Output -match "Missing \.claude-plugin/marketplace\.json") "Output names the missing marketplace"
+    }
+
     # Test 20: Managed Antigravity installs migrate from the legacy global path
     Invoke-TestCase "Installer safely migrates the legacy Antigravity global path" {
         $userHome = Join-Path $testRoot "user-antigravity-migration"
