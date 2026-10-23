@@ -29,6 +29,7 @@ Workflow skills:
 - `checkpoint-progress`
 - `challenge-review`
 - `preserve-comments`
+- `shortcut-ledger`
 
 Stack skills:
 
@@ -109,7 +110,7 @@ later one line does both:
 /plugin install ai-engineering-skills --marketplace vannt-dev/ai-engineering-skills
 ```
 
-All 17 skills load as `ai-engineering-skills:<skill>`. `/plugin update ai-engineering-skills@ai-engineering-skills`
+All 18 skills load as `ai-engineering-skills:<skill>`. `/plugin update ai-engineering-skills@ai-engineering-skills`
 picks up a new release and `/plugin uninstall ai-engineering-skills@ai-engineering-skills` removes it.
 If you installed the collection for Claude Code with the PowerShell installer before, remove that
 copy with the uninstaller below so the skills are not loaded twice.

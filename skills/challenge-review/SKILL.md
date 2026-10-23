@@ -32,5 +32,5 @@ Use the severity tiers and categories of review-code. Report in this order:
 
 1. The verdict: `block` when a critical or high finding stands, `concerns` when a medium finding stands, `clean` otherwise.
 2. Each claim from the first review, held or broken, with the measurement.
-3. Findings by severity, each with exact location, failing scenario, impact, and the lenses that reached it.
+3. Findings by severity, numbered and written in the finding format of review-code, each also naming the lenses that reached it.
 4. The assumptions recorded in step 5.

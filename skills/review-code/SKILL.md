@@ -23,7 +23,26 @@ Review is read-only. Builds, static analysis, and tests are allowed when reposit
 
 ## Findings
 
-Each finding must include severity, category, exact location, failing scenario, impact, and a practical direction for correction. State when a concern is an inference rather than a verified defect. If no findings remain, say so and identify verification gaps or residual risks.
+Every finding needs a concrete case: the input or situation that leads to the wrong result. Before reporting, re-read the lines and confirm the case holds: the caller exists, the value can be empty, the code is unused. A concern without a confirmed case is an inference; label it as one. When a finding depends on scale, say which load you assumed (one person running a script, or many users and processes at once) and where in the repository that load is stated.
+
+A deliberate shortcut marked with a `shortcut: <the limit>, <when to upgrade>` comment is a recorded decision, not a finding, unless the expected load already crosses the limit it names.
+
+Write for a reader who has never seen this code: short sentences, everyday words, and each technical term explained the first time it appears. Number the findings in one sequence across all severities, so the user can answer "fix 2 and 5". Each finding gives severity, category, and exact location, then four short parts:
+
+- **What this is:** what the code does, in one sentence.
+- **Problem:** the failing scenario and the wrong result it produces.
+- **Fix:** the smallest correction that works; prefer one that removes code.
+- **If we skip it:** the impact on users, data, or operations.
+
+```text
+2. high · correctness: Retry can charge a card twice (`billing/charge.py:31-44`)
+   - What this is: `charge()` calls the payment provider and retries once on a timeout.
+   - Problem: a timeout does not mean the first call failed. When it succeeded late, the retry charges again.
+   - Fix: send the same idempotency key on both attempts.
+   - If we skip it: some customers pay twice, and support refunds them by hand.
+```
+
+End the review with two lines: `Verdict:` ship, or which numbered findings to fix first; and `Not checked:` what mattered but could not be read or run. If no findings remain, say so, name what was checked, and identify verification gaps or residual risks.
 
 ### Scope Supplied by the Harness
 
