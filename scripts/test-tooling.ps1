@@ -123,7 +123,9 @@ try {
         Assert-Equal $manifest.version $geminiReceipt.version "Gemini receipt version matches $($manifest.version)"
 
         # 3. Not Claude Code: OpenCode also reads .claude/skills and wants each skill name in one place.
-        Assert-True (-not (Test-Path (Join-Path $userHome ".claude"))) "Universal does not create .claude"
+        $claudeSkills = Join-Path $userHome ".claude\skills"
+        Assert-Equal $expectedSkillCount @(Get-ChildItem -LiteralPath $claudeSkills -Directory).Count "$expectedSkillCount flat skills in .claude/skills"
+        Assert-True (Test-Path -LiteralPath (Join-Path $claudeSkills ".ai-engineering-skills.receipt.json")) "Claude receipt exists"
     }
 
     # Test 3b: the Claude target installs flat, the only layout Claude Code discovers
@@ -161,7 +163,9 @@ try {
         Assert-Equal $expectedSkillCount (Get-ChildItem -LiteralPath $projAgents -Directory).Count "$expectedSkillCount skills in project .agents/skills"
         Assert-True (Test-Path (Join-Path $projAgents ".ai-engineering-skills.receipt.json")) "Project .agents receipt exists"
 
-        Assert-True (-not (Test-Path (Join-Path $projRoot ".claude"))) "Universal does not create .claude in the project"
+        $projClaude = Join-Path $projRoot ".claude\skills"
+        Assert-Equal $expectedSkillCount @(Get-ChildItem -LiteralPath $projClaude -Directory).Count "$expectedSkillCount flat skills in project .claude/skills"
+        Assert-True (-not (Test-Path (Join-Path $projClaude "ai-engineering-skills"))) "No nested plugin directory"
 
         Assert-True (-not (Test-Path (Join-Path $projRoot ".gemini"))) "No .gemini created in project scope"
     }
@@ -503,6 +507,7 @@ try {
 
         & $uninstallScript -Target Universal -Scope Project -ProjectRoot $projRoot -Confirm:$false
         Assert-True (Test-Path -LiteralPath (Join-Path $custom "keep.txt")) "Unrelated skill is preserved"
+        Assert-True (-not (Test-Path -LiteralPath (Join-Path $projRoot ".claude\skills\analyze-requirement"))) "Managed Claude skill is removed"
         Assert-True (-not (Test-Path -LiteralPath (Join-Path $projRoot ".agents\skills\analyze-requirement"))) "Managed canonical skill is removed"
     }
 

@@ -19,10 +19,10 @@ function Assert-Path([string]$Path, [string]$Description) {
 try {
     & $installScript -Target Universal -Scope User -UserHome $userHome
     & $installScript -Target Universal -Scope Project -ProjectRoot $projectRoot
-    & $installScript -Target Claude -Scope Project -ProjectRoot $projectRoot
 
     Assert-Path (Join-Path $userHome ".agents\skills\analyze-requirement\SKILL.md") "canonical user discovery layout is missing"
     Assert-Path (Join-Path $userHome ".gemini\config\skills\analyze-requirement\SKILL.md") "Antigravity user discovery layout is missing"
+    Assert-Path (Join-Path $userHome ".claude\skills\analyze-requirement\SKILL.md") "Claude Code user discovery layout is missing"
     Assert-Path (Join-Path $projectRoot ".agents\skills\analyze-requirement\SKILL.md") "canonical project discovery layout is missing"
     Assert-Path (Join-Path $projectRoot ".claude\skills\analyze-requirement\SKILL.md") "Claude Code project discovery layout is missing"
 

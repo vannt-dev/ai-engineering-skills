@@ -55,9 +55,12 @@ In a polyglot repository, use the workflow skill that matches the task together 
 `Universal` installation uses the shared Agent Skills locations where practical:
 
 - canonical skills go to `.agents/skills` for Codex, OpenCode, and workspace-scoped Antigravity;
+- the same skills go flat to `.claude/skills` for Claude Code, the only place Claude Code reads skills from (`.claude/skills/<skill>/SKILL.md`);
 - user-scope Universal installation also installs the canonical skills into Antigravity's global directory at `.gemini/config/skills`.
 
-Universal leaves Claude Code out. Claude Code reads skills only from `.claude/skills/<skill>/SKILL.md`, and [OpenCode](https://opencode.ai/docs/skills) reads that folder too and asks for each skill name to be in one place only. For Claude Code, [install the plugin](#install-in-claude-code) or run the installer with `-Target Claude`, which puts the skills flat into `.claude/skills`. Up to 1.3.0 the installer put a nested copy in `.claude/skills/ai-engineering-skills`, which Claude Code does not load; running this version with `-Overwrite` removes it.
+[OpenCode](https://opencode.ai/docs/skills) reads both `.agents/skills` and `.claude/skills`. OpenCode 1.3.13 lists a skill found in both once, from `.agents/skills`, and [OpenCode V2](https://opencode.ai/v2/docs/skills) resolves such duplicates by source precedence. Use the direct `OpenCode` target when a single discovery source is required.
+
+Up to 1.3.0 the installer put the Claude Code copy in a nested folder, `.claude/skills/ai-engineering-skills`, which Claude Code does not load. Run this version with `-Overwrite` to replace it with the flat layout.
 
 The repository contains `.codex-plugin/plugin.json` and `.claude-plugin/plugin.json` so it can also be packaged natively for Codex or Claude Code, and `.claude-plugin/marketplace.json` so Claude Code can [install it as a plugin](#install-in-claude-code) straight from GitHub.
 
@@ -143,7 +146,7 @@ Preview a user-level Universal installation:
 .\scripts\install-skills.ps1 -Target Universal -Scope User -WhatIf
 ```
 
-Install for Codex, OpenCode and Antigravity (Universal):
+Install for all supported products:
 
 ```powershell
 .\scripts\install-skills.ps1 -Target Universal -Scope User
