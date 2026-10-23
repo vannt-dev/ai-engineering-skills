@@ -78,6 +78,14 @@
       ]
     },
     {
+      "name": "shortcut-ledger",
+      "category": "workflow",
+      "tags": [
+        "technical-debt",
+        "review"
+      ]
+    },
+    {
       "name": "dotnet-engineering",
       "category": "stack",
       "appliesTo": [
