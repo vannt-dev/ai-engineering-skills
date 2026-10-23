@@ -32,12 +32,9 @@ $destinations = [System.Collections.Generic.List[hashtable]]::new()
 function Add-Flat([string]$Path) { $destinations.Add(@{ Type = "CanonicalFlat"; Path = $Path }) }
 # Claude Code skills are flat in .claude/skills. Up to 1.3.0 the Claude and Universal targets put them in a
 # nested plugin, .claude/skills/ai-engineering-skills; it is removed too when its receipt is there.
-function Add-ClaudeLegacy([string]$Path) {
-    $destinations.Add(@{ Type = "ClaudeNestedPlugin"; Path = (Join-Path $Path "ai-engineering-skills"); Legacy = $true })
-}
 function Add-Claude([string]$Path) {
     Add-Flat $Path
-    Add-ClaudeLegacy $Path
+    $destinations.Add(@{ Type = "ClaudeNestedPlugin"; Path = (Join-Path $Path "ai-engineering-skills"); Legacy = $true })
 }
 
 if ($Scope -eq "User") {
@@ -48,7 +45,7 @@ if ($Scope -eq "User") {
         "Antigravity" { Add-Flat (Join-Path $root ".gemini\config\skills") }
         "Universal"   {
             Add-Flat (Join-Path $root ".agents\skills")
-            Add-ClaudeLegacy (Join-Path $root ".claude\skills")
+            Add-Claude (Join-Path $root ".claude\skills")
             Add-Flat (Join-Path $root ".gemini\config\skills")
         }
     }
@@ -60,7 +57,7 @@ if ($Scope -eq "User") {
         "Antigravity" { Add-Flat (Join-Path $root ".agents\skills") }
         "Universal"   {
             Add-Flat (Join-Path $root ".agents\skills")
-            Add-ClaudeLegacy (Join-Path $root ".claude\skills")
+            Add-Claude (Join-Path $root ".claude\skills")
         }
     }
 }

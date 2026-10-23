@@ -73,8 +73,8 @@ if ($Scope -eq "User") {
 
 # 4. Plan destinations
 # Every destination is flat ('CanonicalFlat'): <dest>/<skill-name>/SKILL.md and a receipt in <dest>.
-# Claude Code discovers skills only at .claude/skills/<skill-name>/SKILL.md. Universal leaves that path out:
-# OpenCode reads .claude/skills as well as .agents/skills and wants a skill name in one place only.
+# Claude Code discovers skills only at .claude/skills/<skill-name>/SKILL.md. OpenCode reads both .agents/skills
+# and .claude/skills; OpenCode 1.3.13 lists a name found in both once, from .agents/skills, without a warning.
 $plannedDestinations = [System.Collections.Generic.List[hashtable]]::new()
 
 if ($Scope -eq "User") {
@@ -113,6 +113,12 @@ if ($Scope -eq "User") {
                 Type = "CanonicalFlat"
                 Path = (Join-Path $resolvedUserHome ".agents\skills")
                 Description = "Universal User canonical skills (.agents/skills)"
+            })
+            # Claude Code
+            $plannedDestinations.Add(@{
+                Type = "CanonicalFlat"
+                Path = (Join-Path $resolvedUserHome ".claude\skills")
+                Description = "Universal User Claude Code skills (.claude/skills)"
             })
             # Antigravity global
             $plannedDestinations.Add(@{
@@ -158,6 +164,11 @@ if ($Scope -eq "User") {
                 Type = "CanonicalFlat"
                 Path = (Join-Path $resolvedProjectRoot ".agents\skills")
                 Description = "Universal Project canonical skills (.agents/skills)"
+            })
+            $plannedDestinations.Add(@{
+                Type = "CanonicalFlat"
+                Path = (Join-Path $resolvedProjectRoot ".claude\skills")
+                Description = "Universal Project Claude Code skills (.claude/skills)"
             })
         }
     }
@@ -213,7 +224,7 @@ if ($Scope -eq "User" -and $Target -in @("Antigravity", "Universal")) {
 }
 
 # Up to 1.3.0 the installer put Claude Code skills in a nested plugin, .claude/skills/ai-engineering-skills,
-# a layout Claude Code does not load. -Overwrite removes it; with -Target Claude the flat layout replaces it.
+# a layout Claude Code does not load. -Overwrite replaces it with the flat layout.
 $legacyClaudePluginPath = $null
 if ($Target -in @("Claude", "Universal")) {
     $claudeRoot = if ($Scope -eq "User") { $resolvedUserHome } else { $resolvedProjectRoot }
@@ -426,9 +437,6 @@ try {
     }
     if ($legacyClaudePluginPath) {
         Write-Output "Removed the old nested Claude Code installation at $legacyClaudePluginPath"
-    }
-    if ($Target -eq "Universal") {
-        Write-Output "Claude Code does not read these locations: install the plugin (see README) or run again with -Target Claude."
     }
 } finally {
     if ($stageRoot -and (Test-Path -LiteralPath $stageRoot)) {
