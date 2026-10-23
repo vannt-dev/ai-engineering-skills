@@ -19,12 +19,12 @@ function Assert-Path([string]$Path, [string]$Description) {
 try {
     & $installScript -Target Universal -Scope User -UserHome $userHome
     & $installScript -Target Universal -Scope Project -ProjectRoot $projectRoot
+    & $installScript -Target Claude -Scope Project -ProjectRoot $projectRoot
 
     Assert-Path (Join-Path $userHome ".agents\skills\analyze-requirement\SKILL.md") "canonical user discovery layout is missing"
     Assert-Path (Join-Path $userHome ".gemini\config\skills\analyze-requirement\SKILL.md") "Antigravity user discovery layout is missing"
-    Assert-Path (Join-Path $userHome ".claude\skills\ai-engineering-skills\.claude-plugin\plugin.json") "Claude user plugin layout is missing"
     Assert-Path (Join-Path $projectRoot ".agents\skills\analyze-requirement\SKILL.md") "canonical project discovery layout is missing"
-    Assert-Path (Join-Path $projectRoot ".claude\skills\ai-engineering-skills\evals\review-code-material-defect\prompt.md") "installed Claude evals are missing"
+    Assert-Path (Join-Path $projectRoot ".claude\skills\analyze-requirement\SKILL.md") "Claude Code project discovery layout is missing"
 
     if ($RequireCommand) {
         $executable = switch ($RequireCommand) {
@@ -39,8 +39,6 @@ try {
         if ($LASTEXITCODE -ne 0) { throw "'$executable --version' failed with exit code $LASTEXITCODE." }
 
         if ($RequireCommand -eq "Claude") {
-            & claude plugin validate --strict (Join-Path $userHome ".claude\skills\ai-engineering-skills")
-            if ($LASTEXITCODE -ne 0) { throw "Claude rejected the installed plugin." }
             # Validating a folder that holds marketplace.json checks only the marketplace, so name each file.
             $collectionRoot = Split-Path -Parent $PSScriptRoot
             foreach ($manifest in @("plugin.json", "marketplace.json")) {

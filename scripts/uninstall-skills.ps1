@@ -30,29 +30,37 @@ if ($Scope -eq "User") {
 
 $destinations = [System.Collections.Generic.List[hashtable]]::new()
 function Add-Flat([string]$Path) { $destinations.Add(@{ Type = "CanonicalFlat"; Path = $Path }) }
-function Add-Claude([string]$Path) { $destinations.Add(@{ Type = "ClaudeNestedPlugin"; Path = $Path }) }
+# Claude Code skills are flat in .claude/skills. Up to 1.3.0 the Claude and Universal targets put them in a
+# nested plugin, .claude/skills/ai-engineering-skills; it is removed too when its receipt is there.
+function Add-ClaudeLegacy([string]$Path) {
+    $destinations.Add(@{ Type = "ClaudeNestedPlugin"; Path = (Join-Path $Path "ai-engineering-skills"); Legacy = $true })
+}
+function Add-Claude([string]$Path) {
+    Add-Flat $Path
+    Add-ClaudeLegacy $Path
+}
 
 if ($Scope -eq "User") {
     switch ($Target) {
         "Codex"       { Add-Flat (Join-Path $root ".agents\skills") }
-        "Claude"      { Add-Claude (Join-Path $root ".claude\skills\ai-engineering-skills") }
+        "Claude"      { Add-Claude (Join-Path $root ".claude\skills") }
         "OpenCode"    { Add-Flat (Join-Path $root ".config\opencode\skills") }
         "Antigravity" { Add-Flat (Join-Path $root ".gemini\config\skills") }
         "Universal"   {
             Add-Flat (Join-Path $root ".agents\skills")
-            Add-Claude (Join-Path $root ".claude\skills\ai-engineering-skills")
+            Add-ClaudeLegacy (Join-Path $root ".claude\skills")
             Add-Flat (Join-Path $root ".gemini\config\skills")
         }
     }
 } else {
     switch ($Target) {
         "Codex"       { Add-Flat (Join-Path $root ".agents\skills") }
-        "Claude"      { Add-Claude (Join-Path $root ".claude\skills\ai-engineering-skills") }
+        "Claude"      { Add-Claude (Join-Path $root ".claude\skills") }
         "OpenCode"    { Add-Flat (Join-Path $root ".opencode\skills") }
         "Antigravity" { Add-Flat (Join-Path $root ".agents\skills") }
         "Universal"   {
             Add-Flat (Join-Path $root ".agents\skills")
-            Add-Claude (Join-Path $root ".claude\skills\ai-engineering-skills")
+            Add-ClaudeLegacy (Join-Path $root ".claude\skills")
         }
     }
 }
@@ -75,6 +83,7 @@ foreach ($dest in $destinations) {
     $receiptPath = if ($dest.Type -eq "CanonicalFlat") { Join-Path $dest.Path ".ai-engineering-skills.receipt.json" } else { Join-Path $dest.Path ".ai-engineering-skills.receipt.json" }
     $receipt = Read-Receipt $receiptPath
     if (-not $receipt) {
+        if ($dest.ContainsKey("Legacy")) { continue }
         Write-Warning "No managed installation receipt found at '$receiptPath'; nothing will be removed there."
         continue
     }
@@ -105,6 +114,23 @@ foreach ($path in $removals) {
 }
 if ($WhatIfPreference) { return }
 
+# Windows PowerShell 5.1 cannot delete paths longer than 260 characters; the \?\ form of the path can.
+function Remove-Tree {
+    param([string]$Path)
+    try {
+        Remove-Item -LiteralPath $Path -Recurse -Force
+    } catch {
+        $full = [System.IO.Path]::GetFullPath($Path)
+        if ([System.IO.Path]::DirectorySeparatorChar -ne '\' -or $full.StartsWith('\')) { throw }
+        $long = '\?\' + $full
+        if ([System.IO.Directory]::Exists($long)) {
+            [System.IO.Directory]::Delete($long, $true)
+        } elseif ([System.IO.File]::Exists($long)) {
+            [System.IO.File]::Delete($long)
+        }
+    }
+}
+
 $transactionId = [System.Guid]::NewGuid().ToString("N")
 $moved = [System.Collections.Generic.List[hashtable]]::new()
 $moveCount = 0
@@ -125,6 +151,6 @@ try {
 }
 
 foreach ($entry in $moved) {
-    try { Remove-Item -LiteralPath $entry.Quarantine -Recurse -Force } catch { Write-Warning "Content was uninstalled but quarantine cleanup failed for '$($entry.Quarantine)': $($_.Exception.Message)" }
+    try { Remove-Tree -Path $entry.Quarantine } catch { Write-Warning "Content was uninstalled but quarantine cleanup failed for '$($entry.Quarantine)': $($_.Exception.Message)" }
 }
 Write-Output "Removed $($moved.Count) receipt-managed path(s); unrelated content was preserved."

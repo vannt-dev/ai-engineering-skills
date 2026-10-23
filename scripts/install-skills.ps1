@@ -27,7 +27,6 @@ $collectionRoot = Split-Path -Parent $PSScriptRoot
 $validatorScript = Join-Path $PSScriptRoot "validate-skills.ps1"
 $manifestPath = Join-Path $collectionRoot "skillset.json"
 $skillsSourceRoot = Join-Path $collectionRoot "skills"
-$claudeManifestSource = Join-Path $collectionRoot ".claude-plugin\plugin.json"
 
 if ($ForceOverwriteUnmanaged -and -not $Overwrite) {
     throw "ForceOverwriteUnmanaged requires -Overwrite."
@@ -73,9 +72,9 @@ if ($Scope -eq "User") {
 }
 
 # 4. Plan destinations
-# Types:
-# - 'CanonicalFlat': Destination contains <dest>/<skill-name>
-# - 'ClaudeNestedPlugin': Destination is <dest>/ai-engineering-skills
+# Every destination is flat ('CanonicalFlat'): <dest>/<skill-name>/SKILL.md and a receipt in <dest>.
+# Claude Code discovers skills only at .claude/skills/<skill-name>/SKILL.md. Universal leaves that path out:
+# OpenCode reads .claude/skills as well as .agents/skills and wants a skill name in one place only.
 $plannedDestinations = [System.Collections.Generic.List[hashtable]]::new()
 
 if ($Scope -eq "User") {
@@ -89,9 +88,9 @@ if ($Scope -eq "User") {
         }
         "Claude" {
             $plannedDestinations.Add(@{
-                Type = "ClaudeNestedPlugin"
-                Path = (Join-Path $resolvedUserHome ".claude\skills\ai-engineering-skills")
-                Description = "Claude Code User plugin"
+                Type = "CanonicalFlat"
+                Path = (Join-Path $resolvedUserHome ".claude\skills")
+                Description = "Claude Code User skills"
             })
         }
         "OpenCode" {
@@ -115,12 +114,6 @@ if ($Scope -eq "User") {
                 Path = (Join-Path $resolvedUserHome ".agents\skills")
                 Description = "Universal User canonical skills (.agents/skills)"
             })
-            # Nested Claude plugin
-            $plannedDestinations.Add(@{
-                Type = "ClaudeNestedPlugin"
-                Path = (Join-Path $resolvedUserHome ".claude\skills\ai-engineering-skills")
-                Description = "Universal User Claude nested plugin"
-            })
             # Antigravity global
             $plannedDestinations.Add(@{
                 Type = "CanonicalFlat"
@@ -141,9 +134,9 @@ if ($Scope -eq "User") {
         }
         "Claude" {
             $plannedDestinations.Add(@{
-                Type = "ClaudeNestedPlugin"
-                Path = (Join-Path $resolvedProjectRoot ".claude\skills\ai-engineering-skills")
-                Description = "Claude Code Project plugin"
+                Type = "CanonicalFlat"
+                Path = (Join-Path $resolvedProjectRoot ".claude\skills")
+                Description = "Claude Code Project skills"
             })
         }
         "OpenCode" {
@@ -165,11 +158,6 @@ if ($Scope -eq "User") {
                 Type = "CanonicalFlat"
                 Path = (Join-Path $resolvedProjectRoot ".agents\skills")
                 Description = "Universal Project canonical skills (.agents/skills)"
-            })
-            $plannedDestinations.Add(@{
-                Type = "ClaudeNestedPlugin"
-                Path = (Join-Path $resolvedProjectRoot ".claude\skills\ai-engineering-skills")
-                Description = "Universal Project Claude nested plugin"
             })
         }
     }
@@ -224,6 +212,20 @@ if ($Scope -eq "User" -and $Target -in @("Antigravity", "Universal")) {
     }
 }
 
+# Up to 1.3.0 the installer put Claude Code skills in a nested plugin, .claude/skills/ai-engineering-skills,
+# a layout Claude Code does not load. -Overwrite removes it; with -Target Claude the flat layout replaces it.
+$legacyClaudePluginPath = $null
+if ($Target -in @("Claude", "Universal")) {
+    $claudeRoot = if ($Scope -eq "User") { $resolvedUserHome } else { $resolvedProjectRoot }
+    $legacyCandidate = Join-Path $claudeRoot ".claude\skills\ai-engineering-skills"
+    if (Get-ManagedReceipt -ReceiptPath (Join-Path $legacyCandidate ".ai-engineering-skills.receipt.json")) {
+        if (-not $Overwrite) {
+            throw "A managed Claude Code installation in the old nested layout exists at '$legacyCandidate', and Claude Code does not load skills from it. Re-run with -Overwrite to remove it."
+        }
+        $legacyClaudePluginPath = $legacyCandidate
+    }
+}
+
 $collisions = [System.Collections.Generic.List[string]]::new()
 $unmanagedCollisions = [System.Collections.Generic.List[string]]::new()
 foreach ($dest in $plannedDestinations) {
@@ -242,14 +244,6 @@ foreach ($dest in $plannedDestinations) {
                 if ($sName -notin $managedSkillNames) {
                     $unmanagedCollisions.Add($skillTargetDir)
                 }
-            }
-        }
-    } elseif ($dest.Type -eq "ClaudeNestedPlugin") {
-        if (Test-Path -LiteralPath $dest.Path) {
-            $collisions.Add($dest.Path)
-            $receiptPath = Join-Path $dest.Path ".ai-engineering-skills.receipt.json"
-            if (-not (Get-ManagedReceipt -ReceiptPath $receiptPath)) {
-                $unmanagedCollisions.Add($dest.Path)
             }
         }
     }
@@ -282,6 +276,23 @@ $stageRoot = $null
 function Add-InstallOperation {
     param([string]$TargetPath, [AllowNull()][string]$StagedPath, [string]$Description)
     $operations.Add(@{ Target = $TargetPath; Staged = $StagedPath; Description = $Description })
+}
+
+# Windows PowerShell 5.1 cannot delete paths longer than 260 characters; the \\?\ form of the path can.
+function Remove-Tree {
+    param([string]$Path)
+    try {
+        Remove-Item -LiteralPath $Path -Recurse -Force
+    } catch {
+        $full = [System.IO.Path]::GetFullPath($Path)
+        if ([System.IO.Path]::DirectorySeparatorChar -ne '\' -or $full.StartsWith('\\')) { throw }
+        $long = '\\?\' + $full
+        if ([System.IO.Directory]::Exists($long)) {
+            [System.IO.Directory]::Delete($long, $true)
+        } elseif ([System.IO.File]::Exists($long)) {
+            [System.IO.File]::Delete($long)
+        }
+    }
 }
 
 function Assert-SafeReceiptSkillName {
@@ -333,27 +344,11 @@ try {
                 $null = Get-Content -LiteralPath $stagedReceipt -Raw | ConvertFrom-Json
             }
             Add-InstallOperation -TargetPath $receiptPath -StagedPath $stagedReceipt -Description "Write installation receipt"
-        } else {
-            $stagedPlugin = $null
-            if (-not $WhatIfPreference) {
-                $stagedPlugin = Join-Path $stageRoot ("destination-$destinationIndex\plugin")
-                New-Item -ItemType Directory -Path (Join-Path $stagedPlugin ".claude-plugin") -Force | Out-Null
-                New-Item -ItemType Directory -Path (Join-Path $stagedPlugin "skills") -Force | Out-Null
-                Copy-Item -LiteralPath $claudeManifestSource -Destination (Join-Path $stagedPlugin ".claude-plugin\plugin.json") -Force
-                foreach ($sName in $skillNames) {
-                    Copy-Item -LiteralPath (Join-Path $skillsSourceRoot $sName) -Destination (Join-Path $stagedPlugin "skills\$sName") -Recurse -Force
-                }
-                $evalsSource = Join-Path $collectionRoot "evals"
-                if (Test-Path -LiteralPath $evalsSource -PathType Container) {
-                    Copy-Item -LiteralPath $evalsSource -Destination (Join-Path $stagedPlugin "evals") -Recurse -Force
-                }
-                [System.IO.File]::WriteAllText((Join-Path $stagedPlugin ".ai-engineering-skills.receipt.json"), $receiptJson, [System.Text.UTF8Encoding]::new($false))
-                if (@(Get-ChildItem -LiteralPath (Join-Path $stagedPlugin "skills") -Directory).Count -ne $skillNames.Count) {
-                    throw "Staging verification failed for the Claude plugin."
-                }
-            }
-            Add-InstallOperation -TargetPath $dest.Path -StagedPath $stagedPlugin -Description "Install Claude nested plugin"
         }
+    }
+
+    if ($legacyClaudePluginPath) {
+        Add-InstallOperation -TargetPath $legacyClaudePluginPath -StagedPath $null -Description "Remove the old nested Claude Code installation"
     }
 
     if ($legacyAntigravityReceipt -and $Overwrite) {
@@ -408,7 +403,7 @@ try {
         for ($i = $applied.Count - 1; $i -ge 0; $i--) {
             $record = $applied[$i]
             if (Test-Path -LiteralPath $record.Target) {
-                Remove-Item -LiteralPath $record.Target -Recurse -Force
+                Remove-Tree -Path $record.Target
             }
             if ($record.Backup -and (Test-Path -LiteralPath $record.Backup)) {
                 Move-Item -LiteralPath $record.Backup -Destination $record.Target
@@ -419,19 +414,21 @@ try {
 
     foreach ($record in $applied) {
         if ($record.Backup -and (Test-Path -LiteralPath $record.Backup)) {
-            try { Remove-Item -LiteralPath $record.Backup -Recurse -Force } catch { Write-Warning "Installed successfully, but could not remove backup '$($record.Backup)': $($_.Exception.Message)" }
+            try { Remove-Tree -Path $record.Backup } catch { Write-Warning "Installed successfully, but could not remove backup '$($record.Backup)': $($_.Exception.Message)" }
         }
     }
 
     foreach ($dest in $plannedDestinations) {
-        if ($dest.Type -eq "CanonicalFlat") {
-            Write-Output "Installed $($skillNames.Count) canonical skills into $($dest.Path)"
-        } else {
-            Write-Output "Installed Claude nested plugin into $($dest.Path)"
-        }
+        Write-Output "Installed $($skillNames.Count) canonical skills into $($dest.Path)"
     }
     if ($legacyAntigravityReceipt -and $Overwrite) {
         Write-Output "Migrated managed Antigravity skills from $legacyAntigravityRoot"
+    }
+    if ($legacyClaudePluginPath) {
+        Write-Output "Removed the old nested Claude Code installation at $legacyClaudePluginPath"
+    }
+    if ($Target -eq "Universal") {
+        Write-Output "Claude Code does not read these locations: install the plugin (see README) or run again with -Target Claude."
     }
 } finally {
     if ($stageRoot -and (Test-Path -LiteralPath $stageRoot)) {
