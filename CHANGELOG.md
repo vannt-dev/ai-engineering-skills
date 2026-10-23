@@ -7,6 +7,13 @@ Versioning follows semver against `skillset.json`'s `version` field:
 - **minor** — new skill added, or new optional metadata/target support.
 - **major** — breaking change to `skillset.json` schema, canonical frontmatter, or install layout.
 
+## [1.4.1](https://github.com/vannt-dev/ai-engineering-skills/compare/v1.4.0...v1.4.1) (2026-10-23)
+
+
+### Bug Fixes
+
+* install Claude Code skills with Universal too ([#27](https://github.com/vannt-dev/ai-engineering-skills/issues/27)) ([785cb2f](https://github.com/vannt-dev/ai-engineering-skills/commit/785cb2f09e410fc5edfe4504f9cc30abf1f851c0))
+
 ## [1.4.0](https://github.com/vannt-dev/ai-engineering-skills/compare/v1.3.0...v1.4.0) (2026-10-23)
 
 
