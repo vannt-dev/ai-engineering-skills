@@ -122,27 +122,21 @@ try {
         $geminiReceipt = Get-Content -LiteralPath $geminiReceiptPath -Raw | ConvertFrom-Json
         Assert-Equal $manifest.version $geminiReceipt.version "Gemini receipt version matches $($manifest.version)"
 
-        # 3. Claude nested plugin
-        $claudePlugin = Join-Path $userHome ".claude\skills\ai-engineering-skills"
-        Assert-True (Test-Path -LiteralPath $claudePlugin) "Claude nested plugin directory exists"
-        Assert-True (Test-Path -LiteralPath (Join-Path $claudePlugin ".claude-plugin\plugin.json")) "Claude plugin.json exists"
-        $claudeSkills = Join-Path $claudePlugin "skills"
-        $claudeDirs = @(Get-ChildItem -LiteralPath $claudeSkills -Directory | Select-Object -ExpandProperty Name)
-        Assert-Equal $expectedSkillCount $claudeDirs.Count "$expectedSkillCount skills inside Claude plugin"
+        # 3. Not Claude Code: OpenCode also reads .claude/skills and wants each skill name in one place.
+        Assert-True (-not (Test-Path (Join-Path $userHome ".claude"))) "Universal does not create .claude"
+    }
 
-        # The plugin root contains metadata; individual skills stay under pluginRoot/skills.
-        Assert-True (-not (Test-Path (Join-Path $claudePlugin "SKILL.md"))) "No SKILL.md in plugin root"
-        Assert-True (-not (Test-Path (Join-Path $userHome ".claude\skills\SKILL.md"))) "No SKILL.md in .claude/skills root"
-
-        $claudeReceiptPath = Join-Path $claudePlugin ".ai-engineering-skills.receipt.json"
-        Assert-True (Test-Path -LiteralPath $claudeReceiptPath) "Claude plugin receipt exists"
-        $claudeReceipt = Get-Content -LiteralPath $claudeReceiptPath -Raw | ConvertFrom-Json
+    # Test 3b: the Claude target installs flat, the only layout Claude Code discovers
+    Invoke-TestCase "Claude User installs flat skills into .claude/skills" {
+        $userHome = Join-Path $testRoot "user-claude"
+        & $installScript -Target Claude -Scope User -UserHome $userHome
+        $claudeSkills = Join-Path $userHome ".claude\skills"
+        Assert-Equal $expectedSkillCount @(Get-ChildItem -LiteralPath $claudeSkills -Directory).Count "$expectedSkillCount skills in .claude/skills"
+        Assert-True (Test-Path -LiteralPath (Join-Path $claudeSkills "review-code\SKILL.md")) "Skill is at .claude/skills/<skill>/SKILL.md"
+        Assert-True (-not (Test-Path (Join-Path $claudeSkills "ai-engineering-skills"))) "No nested plugin directory"
+        $claudeReceipt = Get-Content -LiteralPath (Join-Path $claudeSkills ".ai-engineering-skills.receipt.json") -Raw | ConvertFrom-Json
         Assert-Equal $manifest.version $claudeReceipt.version "Claude receipt version matches $($manifest.version)"
-
-        if (Get-Command claude -ErrorAction SilentlyContinue) {
-            & claude plugin validate $claudePlugin
-            Assert-Equal 0 $LASTEXITCODE "Installed Claude plugin passes consumer validation"
-        }
+        Assert-True (-not (Test-Path (Join-Path $userHome ".agents"))) ".agents was not created"
     }
 
     # Test 4: Antigravity User Single Target
@@ -167,10 +161,7 @@ try {
         Assert-Equal $expectedSkillCount (Get-ChildItem -LiteralPath $projAgents -Directory).Count "$expectedSkillCount skills in project .agents/skills"
         Assert-True (Test-Path (Join-Path $projAgents ".ai-engineering-skills.receipt.json")) "Project .agents receipt exists"
 
-        $projClaude = Join-Path $projRoot ".claude\skills\ai-engineering-skills"
-        Assert-True (Test-Path (Join-Path $projClaude ".claude-plugin\plugin.json")) "Project Claude manifest exists"
-        Assert-Equal $expectedSkillCount (Get-ChildItem -LiteralPath (Join-Path $projClaude "skills") -Directory).Count "$expectedSkillCount skills in project Claude plugin"
-        Assert-True (Test-Path (Join-Path $projClaude ".ai-engineering-skills.receipt.json")) "Project Claude receipt exists"
+        Assert-True (-not (Test-Path (Join-Path $projRoot ".claude"))) "Universal does not create .claude in the project"
 
         Assert-True (-not (Test-Path (Join-Path $projRoot ".gemini"))) "No .gemini created in project scope"
     }
@@ -186,15 +177,11 @@ try {
         Set-Content -LiteralPath $staleFile1 -Value "stale content"
         Assert-True (Test-Path -LiteralPath $staleFile1) "Stale file created"
 
-        $staleFile2 = Join-Path $projRoot ".claude\skills\ai-engineering-skills\skills\analyze-requirement\stale-plugin.txt"
-        Set-Content -LiteralPath $staleFile2 -Value "stale plugin content"
-        Assert-True (Test-Path -LiteralPath $staleFile2) "Stale plugin file created"
 
         # Re-run with -Overwrite
         & $installScript -Target Universal -Scope Project -ProjectRoot $projRoot -Overwrite
 
         Assert-True (-not (Test-Path -LiteralPath $staleFile1)) "Stale file in .agents/skills removed"
-        Assert-True (-not (Test-Path -LiteralPath $staleFile2)) "Stale file in Claude plugin removed"
     }
 
     # Test 7: Preserves non-collection skills with -Overwrite
@@ -483,7 +470,7 @@ try {
         }
         Assert-True $failed "Injected transaction failure was observed"
         Assert-True (Test-Path -LiteralPath $sentinel) "Original managed directory was restored"
-        Assert-True (Test-Path -LiteralPath (Join-Path $projRoot ".claude\skills\ai-engineering-skills\.ai-engineering-skills.receipt.json")) "Untouched destination remains installed"
+        Assert-True (Test-Path -LiteralPath (Join-Path $projRoot ".agents\skills\.ai-engineering-skills.receipt.json")) "The receipt, not yet reached, was restored"
         Assert-Equal 0 @(Get-ChildItem -LiteralPath $projRoot -Recurse -Force | Where-Object Name -Like "*.ai-engineering-skills-backup-*").Count "No backup artifacts remain"
     }
 
@@ -517,7 +504,39 @@ try {
         & $uninstallScript -Target Universal -Scope Project -ProjectRoot $projRoot -Confirm:$false
         Assert-True (Test-Path -LiteralPath (Join-Path $custom "keep.txt")) "Unrelated skill is preserved"
         Assert-True (-not (Test-Path -LiteralPath (Join-Path $projRoot ".agents\skills\analyze-requirement"))) "Managed canonical skill is removed"
-        Assert-True (-not (Test-Path -LiteralPath (Join-Path $projRoot ".claude\skills\ai-engineering-skills"))) "Managed Claude plugin is removed"
+    }
+
+    # Test 24b: -Overwrite replaces the old nested Claude layout, even below 260 characters
+    Invoke-TestCase "Installer replaces the old nested Claude Code installation" {
+        $projRoot = Join-Path $testRoot "project-claude-nested"
+        $nested = Join-Path $projRoot ".claude\skills\ai-engineering-skills"
+        New-Item -ItemType Directory -Path (Join-Path $nested "skills\review-code") -Force | Out-Null
+        Set-Content -LiteralPath (Join-Path $nested "skills\review-code\SKILL.md") -Value "old"
+        $oldReceipt = [ordered]@{ schemaVersion = 1; collection = "ai-engineering-skills"; version = "1.3.0"; skills = @("review-code") }
+        [System.IO.File]::WriteAllText((Join-Path $nested ".ai-engineering-skills.receipt.json"), ($oldReceipt | ConvertTo-Json), [System.Text.UTF8Encoding]::new($false))
+        # A file deep enough that its backup path passes 260 characters, as the old evals folder did.
+        $longPrefix = if ([System.IO.Path]::DirectorySeparatorChar -eq '\') { '\\?\' } else { '' }
+        $deepDir = $longPrefix + [System.IO.Path]::GetFullPath((Join-Path (Join-Path (Join-Path $nested "evals") ("d" * 120)) "graders"))
+        [System.IO.Directory]::CreateDirectory($deepDir) | Out-Null
+        [System.IO.File]::WriteAllText([System.IO.Path]::Combine($deepDir, "criteria.md"), "deep")
+
+        $failed = $false
+        try {
+            & $installScript -Target Claude -Scope Project -ProjectRoot $projRoot
+        } catch {
+            $failed = $true
+            Assert-True ($_.Exception.Message -match "old nested layout") "Error names the old nested layout"
+        }
+        Assert-True $failed "Installer refused to leave the old layout in place without -Overwrite"
+
+        & $installScript -Target Claude -Scope Project -ProjectRoot $projRoot -Overwrite
+        $claudeSkills = Join-Path $projRoot ".claude\skills"
+        Assert-True (-not (Test-Path -LiteralPath $nested)) "Old nested installation is removed"
+        Assert-True (Test-Path -LiteralPath (Join-Path $claudeSkills "review-code\SKILL.md")) "Flat skills are installed"
+        Assert-Equal 0 @(Get-ChildItem -LiteralPath $claudeSkills -Force | Where-Object Name -Like "*.ai-engineering-skills-backup-*").Count "No backup is left in .claude/skills"
+
+        & $uninstallScript -Target Claude -Scope Project -ProjectRoot $projRoot -Confirm:$false
+        Assert-Equal 0 @(Get-ChildItem -LiteralPath $claudeSkills -Force).Count "Uninstall leaves .claude/skills empty"
     }
 
     # Test 25: WhatIf is non-mutating for uninstall
