@@ -60,6 +60,19 @@ In a polyglot repository, use the workflow skill that matches the task together 
 
 [OpenCode](https://opencode.ai/docs/skills) reads both `.agents/skills` and `.claude/skills`. OpenCode 1.3.13 lists a skill found in both once, from `.agents/skills`, and [OpenCode V2](https://opencode.ai/v2/docs/skills) resolves such duplicates by source precedence. Use the direct `OpenCode` target when a single discovery source is required.
 
+### Checked on real tools
+
+What the collection was checked against on 23 October 2026, on Windows, during the 1.4.0 and 1.4.1 releases, with a project installation:
+
+| Tool | Version | Skills read from | Skills found | A skill run |
+| --- | --- | --- | --- | --- |
+| Claude Code | 2.1.309 | `.claude/skills` | 18 of 18 | yes: `review-code`, `implement-change`, `challenge-review`, `shortcut-ledger` |
+| Codex CLI | 0.164.0 | `.agents/skills` | not counted | yes: `shortcut-ledger` |
+| OpenCode | 1.3.13 | `.agents/skills` (wins over `.claude/skills`) | 18, each once | not checked: the CLI ran no model |
+| Antigravity CLI (`agy`) | 1.3.3 | `.agents/skills` | not listed at start | yes: `shortcut-ledger` |
+
+"Skills found" is what the tool lists at start: the `skills` of Claude Code's init event, `opencode-cli debug skill` for OpenCode. `agy` lists no skills at start, and the Codex list was not counted; both were checked by use instead: each opened `shortcut-ledger` from `.agents/skills`, ran its search and gave the expected ledger row.
+
 Up to 1.3.0 the installer put the Claude Code copy in a nested folder, `.claude/skills/ai-engineering-skills`, which Claude Code does not load. Run this version with `-Overwrite` to replace it with the flat layout.
 
 The repository contains `.codex-plugin/plugin.json` and `.claude-plugin/plugin.json` so it can also be packaged natively for Codex or Claude Code, and `.claude-plugin/marketplace.json` so Claude Code can [install it as a plugin](#install-in-claude-code) straight from GitHub.
