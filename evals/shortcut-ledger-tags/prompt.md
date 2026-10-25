@@ -3,13 +3,13 @@ We release next week. What did we leave for later in this repository? These are 
 `README.md`
 
 ```markdown
-# order-sync
+# ledger-sync
 
-Imports the nightly order export into the warehouse database.
+Imports customer ledgers and serves a status page.
 
 ## Capacity
 
-Runs as a single replica. Tonight's export is about 5,000 orders; after next week's launch we expect 50,000 orders per night.
+Runs as one instance. Nightly imports reach 8,000 rows today, and the largest customer sends 30,000 rows in one file. API clients send up to 50 requests per second at peak.
 ```
 
 `src/importer.py`
@@ -17,38 +17,60 @@ Runs as a single replica. Tonight's export is about 5,000 orders; after next wee
 ```python
 import csv
 
-
-def load_orders(path):
-    # shortcut: reads the whole export into memory, stream it once a night passes 20,000 orders
+# shortcut: validates rows one at a time, batch it once a file passes 10,000 rows
+def load(path):
     with open(path, newline="") as handle:
-        return list(csv.DictReader(handle))
+        return [validate(row) for row in csv.DictReader(handle)]
 ```
 
-`src/notify.ts`
+`src/limits.ts`
 
 ```ts
-export async function notify(url: string, body: string): Promise<void> {
-  // shortcut: retries three times in a tight loop with no backoff
-  for (let attempt = 0; attempt < 3; attempt++) {
-    const response = await fetch(url, { method: "POST", body });
-    if (response.ok) return;
-  }
-  throw new Error(`notify failed: ${url}`);
-}
+// shortcut: in-memory rate limiter, move it to Redis when we run more than one instance
+const hits = new Map<string, number>();
 ```
 
-`src/cache.go`
+`db/report.sql`
 
-```go
-package sync
+```sql
+-- shortcut: full table scan on orders
+SELECT customer_id, SUM(total) FROM orders GROUP BY customer_id;
+```
 
-// shortcut: in-process map cache, move it to Redis when we run more than one replica
-var skuCache = map[string]int{}
+`config/app.ini`
+
+```ini
+[sync]
+; shortcut: retry count hard-coded to 3
+retries = 3
+```
+
+`web/status.html`
+
+```html
+<!-- shortcut: polls every 2 seconds, switch to server-sent events above 20 requests per second -->
+<div id="status"></div>
 ```
 
 `src/keys.ts`
 
 ```ts
-// shortcut: Ctrl+S saves the draft; the binding lives in keymap.json
-export const SAVE_KEY = "Ctrl+S";
+// shortcut: Ctrl+K opens the command palette
+export const PALETTE_KEY = "Ctrl+K";
+```
+
+`tests/test_parser.py`
+
+```python
+SAMPLE = "# shortcut: not a real marker, only parser input"
+
+
+def test_parser_ignores_markers_in_strings():
+    assert parse(SAMPLE) == []
+```
+
+`docs/conventions.md`
+
+```markdown
+Mark a deliberate shortcut with a comment of the form `shortcut: <the limit>, <when to upgrade>`.
 ```
