@@ -1,6 +1,6 @@
 ---
 name: implement-change
-description: Implement an approved software change across one or more languages while preserving project constraints, contracts, authorization boundaries, and unrelated work. Use when the user explicitly asks to build, change, or fix code; do not use for analysis-only, planning-only, or review-only requests.
+description: Implement an approved software change across one or more languages while preserving project constraints, contracts, authorization boundaries, and unrelated work. Use when the user asks to build, add, change, or fix code, such as a new flag, option, or output, including when the reply is the change itself as a diff or code because the files are not in the workspace; do not use for analysis-only, planning-only, or review-only requests.
 ---
 
 # Implement Change
@@ -16,7 +16,7 @@ Implementation authority covers only the code, tests, configuration, and documen
 1. Read instructions from the workspace root to the narrowest affected directory and inspect the current implementation before editing.
 2. Confirm the required behavior and stop if an unresolved decision would materially change contracts, data, security, or architecture.
 3. Detect every affected stack from manifests and source. Inspect the available skills and apply every matching stack skill. The current collection includes `dotnet-engineering`, `java-engineering`, `go-engineering`, `python-engineering`, `typescript-engineering`, `database-engineering`, and `dart-engineering`.
-4. Trace affected callers, consumers, contracts, state, and tests across language or service boundaries.
+4. Trace affected callers, consumers, contracts, state, and tests across language or service boundaries. A change to output or options reaches every mode the code has (each output format, command, or platform branch) and keeps what a consumer parses valid: a flag that silences text must not leave a JSON or SARIF run empty.
 5. Make the smallest complete change. Before writing new code, take the first option that fully works: leave it out when the request does not need it (and name what you left out); reuse what this codebase already has (a helper, component, or pattern, used the way the surrounding code uses it); the standard library or platform; a dependency the project already installs; only then new code. Never add a dependency for a few lines. Smallest does not mean partial: reach every caller, test, fixture, and configuration the change affects, preserve unrelated user work and existing conventions, and never trade away validation at trust boundaries, error handling that prevents data loss, security, or accessibility.
 6. When you take a deliberate shortcut with a known limit, mark it with a one-line comment `shortcut: <the limit>, <when to upgrade>`, unless the project has its own marker for deferred work. `shortcut-ledger` collects these markers later.
 7. Add or update behavior-focused tests in proportion to regression risk. New logic with a branch, a loop, parsing, money, or security leaves at least one test that fails when it breaks.
