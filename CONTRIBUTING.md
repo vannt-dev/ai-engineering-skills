@@ -27,7 +27,7 @@ For changes to `site/`, also run `python scripts/test-site.py` after installing 
 Chromium as documented in the README. Keep the catalog aligned with `skillset.json`; the browser
 checks enforce this. Static site changes do not change the installed skill collection version.
 
-Behavior changes should add or update a self-contained case under `evals/<case>/prompt.md` with at least one rubric in `evals/<case>/graders/*.md`. Model-backed eval execution is manual because it requires authentication and incurs usage cost.
+Behavior changes should add or update a self-contained case under `evals/<case>/prompt.md` with at least one rubric in `evals/<case>/graders/*.md`. Model-backed eval execution is manual because it requires authentication and incurs usage cost. To show what a change did to the results, run the affected cases before and after it and paste the output of `.\scripts\compare-eval-runs.ps1 -Baseline <before> -Candidate <after> -Format Markdown` into the pull request.
 
 ## Versioning
 

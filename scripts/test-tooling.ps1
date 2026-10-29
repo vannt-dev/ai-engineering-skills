@@ -11,6 +11,7 @@ $installScript = Join-Path $scriptsDir "install-skills.ps1"
 $uninstallScript = Join-Path $scriptsDir "uninstall-skills.ps1"
 $validateEvalsScript = Join-Path $scriptsDir "validate-evals.ps1"
 $runEvalsScript = Join-Path $scriptsDir "run-behavior-evals.ps1"
+$compareEvalsScript = Join-Path $scriptsDir "compare-eval-runs.ps1"
 $manifest = Get-Content -LiteralPath (Join-Path $collectionRoot "skillset.json") -Raw | ConvertFrom-Json
 $expectedSkillCount = @($manifest.skills).Count
 $powerShellExecutable = (Get-Process -Id $PID).Path
@@ -50,6 +51,56 @@ function Invoke-ValidatorProcess([string]$FixtureRoot) {
         ExitCode = $exitCode
         Output = $output
     }
+}
+
+# Writes a small aggregate-result.json in the shape `claude plugin eval` saves. $Cases maps a case
+# name to @{ With = @($true, $false, ...); Without = @(...) }, one entry per run.
+function New-EvalRunFixture([string]$Name, [hashtable]$Cases, [double]$Threshold = 0.6, [double]$RunCostUsd = 0.1) {
+    $runFolder = Join-Path $testRoot $Name
+    New-Item -ItemType Directory -Path $runFolder -Force | Out-Null
+    $caseRecords = @()
+    foreach ($caseName in @($Cases.Keys | Sort-Object)) {
+        $arms = [ordered]@{}
+        $rates = @{}
+        foreach ($arm in @("With", "Without")) {
+            $outcomes = @($Cases[$caseName][$arm])
+            $arms[$arm.ToLowerInvariant()] = @(foreach ($outcome in $outcomes) {
+                    [ordered]@{
+                        score = $(if ($outcome) { 1 } else { 0 }); passed = [bool]$outcome; turns = 4
+                        costUsd = $RunCostUsd; judgeCostUsd = 0.002; durationSeconds = 30; error = $null
+                    }
+                })
+            $rates[$arm] = @($outcomes | Where-Object { $_ }).Count / [Math]::Max(1, $outcomes.Count)
+        }
+        $caseRecords += [ordered]@{
+            name = $caseName; runsPerCase = 3; arms = $arms
+            aggregates = [ordered]@{
+                score = $rates.With; passRate = $rates.With; scoreWithout = $rates.Without
+                passRateWithout = $rates.Without; delta = $rates.With - $rates.Without
+            }
+        }
+    }
+    $run = [ordered]@{
+        schemaVersion = 1; claudeVersion = "2.1.310"; startedAt = "2026-10-25T14:23:23.059Z"
+        durationSeconds = 120; costUsd = 1.5; partial = $false
+        suite = [ordered]@{ ablation = "with-without"; threshold = $Threshold; plugins = @([ordered]@{ name = "ai-engineering-skills"; version = "1.4.3" }) }
+        cases = $caseRecords
+        aggregates = [ordered]@{ casesTotal = $caseRecords.Count }
+    }
+    $run | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath (Join-Path $runFolder "aggregate-result.json") -Encoding UTF8
+    return $runFolder
+}
+
+function Invoke-CompareProcess([string[]]$Arguments) {
+    $previousErrorActionPreference = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = "Continue"
+        $output = (& $powerShellExecutable -NoProfile -File $compareEvalsScript @Arguments 2>&1 | Out-String)
+        $exitCode = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $previousErrorActionPreference
+    }
+    return [pscustomobject]@{ ExitCode = $exitCode; Output = $output }
 }
 
 $testRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("ai-skills-test-" + [System.Guid]::NewGuid().ToString("N"))
@@ -676,6 +727,96 @@ try {
         Assert-True ($chosen -match " --runs 5( |$)") "The number of runs is passed on: $chosen"
         Assert-True ($chosen -match " --judge-model sonnet( |$)") "The judge model is passed on: $chosen"
         Assert-True ($chosen -match " --case read-only-\*( |$)") "The case filter is passed on: $chosen"
+    }
+
+    Invoke-TestCase "Eval run comparison lists a regression first and fails" {
+        $baseline = New-EvalRunFixture "compare-regress-base" @{
+            "alpha-case" = @{ With = @($true, $true, $true); Without = @($false, $false, $false) }
+            "beta-case" = @{ With = @($true, $true, $false); Without = @($false, $false, $false) }
+            "gamma-case" = @{ With = @($true, $true, $true); Without = @($true, $true, $true) }
+        }
+        $candidate = New-EvalRunFixture "compare-regress-cand" @{
+            "alpha-case" = @{ With = @($true, $true, $true); Without = @($false, $false, $false) }
+            "beta-case" = @{ With = @($true, $false, $false); Without = @($false, $false, $false) }
+            "gamma-case" = @{ With = @($true, $true, $false); Without = @($true, $true, $true) }
+        } -RunCostUsd 0.25
+        $result = Invoke-CompareProcess @("-Baseline", $baseline, "-Candidate", $candidate)
+        Assert-Equal 1 $result.ExitCode "A pass that turned into a fail exits 1: $($result.Output)"
+        $rows = @($result.Output -split "`r?`n" | Where-Object { $_ -match "-case" })
+        Assert-True ($rows[0] -match "^regressed\s+beta-case\s") "The regression comes first: $($rows -join ' | ')"
+        Assert-True ($rows[0] -match "67% -> 33%") "The pass rate change is shown: $($rows[0])"
+        Assert-True ($rows[0] -match "\+\`$0\.9") "The cost change is shown: $($rows[0])"
+        Assert-True ($rows[1] -match "^worse\s+gamma-case\s") "A drop that still passes comes next: $($rows[1])"
+        Assert-True ($rows[2] -match "^same\s+alpha-case\s") "An unchanged case comes last: $($rows[2])"
+        Assert-True ($result.Output -match "1 regressed") "The summary counts the regression: $($result.Output)"
+    }
+
+    Invoke-TestCase "Eval run comparison passes when no case regressed" {
+        $baseline = New-EvalRunFixture "compare-fixed-base" @{
+            "alpha-case" = @{ With = @($true, $false, $false); Without = @($false, $false, $false) }
+            "beta-case" = @{ With = @($true, $true, $true); Without = @($false, $false, $false) }
+        }
+        $candidate = New-EvalRunFixture "compare-fixed-cand" @{
+            "alpha-case" = @{ With = @($true, $true, $false); Without = @($false, $false, $false) }
+            "delta-case" = @{ With = @($false); Without = @($false) }
+        }
+        $result = Invoke-CompareProcess @("-Baseline", (Join-Path $baseline "aggregate-result.json"), "-Candidate", $candidate)
+        Assert-Equal 0 $result.ExitCode "A fixed case and a case missing from one run do not fail: $($result.Output)"
+        Assert-True ($result.Output -match "(?m)^fixed\s+alpha-case\s+33% -> 67%") "A fail that turned into a pass is shown: $($result.Output)"
+        Assert-True ($result.Output -match "(?m)^baseline-only\s+beta-case") "A case only the baseline ran is listed: $($result.Output)"
+        Assert-True ($result.Output -match "(?m)^candidate-only\s+delta-case") "A case only the candidate ran is listed: $($result.Output)"
+    }
+
+    Invoke-TestCase "Eval run comparison judges both runs on one threshold" {
+        # The runner's -Threshold 0 lets every case pass; the comparison applies its own threshold.
+        $baseline = New-EvalRunFixture "compare-threshold-base" @{
+            "alpha-case" = @{ With = @($true, $true, $true); Without = @($false, $false, $false) }
+        } -Threshold 0
+        $candidate = New-EvalRunFixture "compare-threshold-cand" @{
+            "alpha-case" = @{ With = @($true, $false, $false); Without = @($false, $false, $false) }
+        } -Threshold 0
+        $default = Invoke-CompareProcess @("-Baseline", $baseline, "-Candidate", $candidate)
+        Assert-Equal 1 $default.ExitCode "One run of three does not reach the default threshold: $($default.Output)"
+        $lenient = Invoke-CompareProcess @("-Baseline", $baseline, "-Candidate", $candidate, "-Threshold", "0.3")
+        Assert-Equal 0 $lenient.ExitCode "A lower threshold lets the case pass: $($lenient.Output)"
+        Assert-True ($lenient.Output -match "(?m)^worse\s+alpha-case") "The drop is still reported: $($lenient.Output)"
+    }
+
+    Invoke-TestCase "Eval run comparison writes JSON and Markdown" {
+        $baseline = New-EvalRunFixture "compare-format-base" @{
+            "alpha-case" = @{ With = @($true, $true, $true); Without = @($false, $false, $false) }
+        }
+        $candidate = New-EvalRunFixture "compare-format-cand" @{
+            "alpha-case" = @{ With = @($false, $false, $true); Without = @($false, $true, $false) }
+        }
+        $json = Invoke-CompareProcess @("-Baseline", $baseline, "-Candidate", $candidate, "-Format", "Json")
+        Assert-Equal 1 $json.ExitCode "JSON output keeps the exit code"
+        $report = $json.Output | ConvertFrom-Json
+        Assert-Equal 1 $report.regressions "The JSON counts the regression"
+        Assert-Equal "regressed" $report.cases[0].status "The JSON case carries its status"
+        Assert-Equal 1 $report.cases[0].with.baseline "The JSON keeps the baseline pass rate"
+        Assert-True ([Math]::Abs($report.cases[0].with.delta + (2 / 3)) -lt 0.001) "The JSON keeps the pass rate change"
+        Assert-True ([Math]::Abs($report.cases[0].without.candidate - (1 / 3)) -lt 0.001) "The JSON keeps the run without the collection"
+        Assert-Equal 3 $report.cases[0].runs.candidate "The JSON counts the runs"
+
+        $markdown = Invoke-CompareProcess @("-Baseline", $baseline, "-Candidate", $candidate, "-Format", "Markdown")
+        Assert-Equal 1 $markdown.ExitCode "Markdown output keeps the exit code"
+        Assert-True ($markdown.Output -match "(?m)^\| Status \| Case \|") "Markdown has a table header: $($markdown.Output)"
+        Assert-True ($markdown.Output -match "(?m)^\| regressed \| ``alpha-case`` \| 100% -> 33% \|") "Markdown has the case row: $($markdown.Output)"
+    }
+
+    Invoke-TestCase "Eval run comparison refuses a missing or foreign result" {
+        $baseline = New-EvalRunFixture "compare-input-base" @{
+            "alpha-case" = @{ With = @($true); Without = @($false) }
+        }
+        $missing = Invoke-CompareProcess @("-Baseline", $baseline, "-Candidate", (Join-Path $testRoot "no-such-run"))
+        Assert-Equal 2 $missing.ExitCode "A missing run exits 2: $($missing.Output)"
+        $foreignFolder = Join-Path $testRoot "compare-input-foreign"
+        New-Item -ItemType Directory -Path $foreignFolder -Force | Out-Null
+        '{"schemaVersion": 2, "cases": []}' | Set-Content -LiteralPath (Join-Path $foreignFolder "aggregate-result.json")
+        $foreign = Invoke-CompareProcess @("-Baseline", $baseline, "-Candidate", $foreignFolder)
+        Assert-Equal 2 $foreign.ExitCode "An unknown schema version exits 2: $($foreign.Output)"
+        Assert-True ($foreign.Output -match "schemaVersion") "The message names the schema version: $($foreign.Output)"
     }
 
     Write-Host "`nAll $passCount/$testCount tests passed successfully!" -ForegroundColor Green

@@ -105,6 +105,26 @@ Three things to know when reading the results:
 - A `skill-opened` grader (`type: tool_used`, `tool: Skill`) is an indicator, not part of the score: it shows whether the run opened a skill at all. A case in which no skill was opened compares the model with itself, so it cannot show what the collection adds.
 - Each run works in an empty folder and cannot read files outside it. A skill's own `references/` files are out of reach there, although an installed copy reads them normally, so a case that depends on a reference file is weaker in the eval than in use.
 
+To see what changed between two saved runs, for example before and after a skill edit, compare their reports. The comparison reads the saved `aggregate-result.json` files only; it runs no model and costs nothing:
+
+```powershell
+.\scripts\compare-eval-runs.ps1 -Baseline evals\results\2026-10-12T14-10-45-067Z -Candidate evals\results\2026-10-25T14-23-23-059Z
+.\scripts\compare-eval-runs.ps1 -Baseline <older run> -Candidate <newer run> -Format Markdown
+```
+
+Each argument is a run folder under `evals/results/` or its `aggregate-result.json`. For every case the script prints the pass rate with and without the collection in both runs, the number of runs, and the change in cost (the case's runs and their grading), mean time and mean turns per run. The reports record no token counts, so there are none to compare. The cases come in this order:
+
+| Status | Meaning |
+| --- | --- |
+| `regressed` | passed in the baseline, fails in the candidate |
+| `worse` | lower pass rate, same verdict |
+| `fixed` | failed in the baseline, passes in the candidate |
+| `better` | higher pass rate, same verdict |
+| `same` | same pass rate |
+| `baseline-only`, `candidate-only` | the other run did not include the case, for example because of `-Case` |
+
+A case passes when its pass rate with the collection reaches `-Threshold` (0.6, two runs of three, unless given). Both runs are judged on it rather than on the threshold each was run with, because a run made with `-Threshold 0` passes every case. `-Format Markdown` prints a table to paste into a pull request; `-Format Json` prints the same data for other tools. The exit code is 0 when no case regressed, 1 when at least one did, and 2 when a report cannot be read, so the script can gate a step that has both reports at hand. A drop that keeps the verdict, or a case missing from one run, does not fail it.
+
 ## Install
 
 ### Install in Claude Code
