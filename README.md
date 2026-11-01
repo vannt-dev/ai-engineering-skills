@@ -7,6 +7,32 @@ A portable collection of software-engineering skills for Codex, Claude Code, Ope
 
 [Explore the collection and installation guide →](https://vannt-dev.github.io/ai-engineering-skills/)
 
+You install the skills once; on each task your agent opens the ones that fit, under your project's rules.
+
+```mermaid
+%%{init: {"flowchart": {"wrappingWidth": 300}}}%%
+flowchart TB
+  subgraph install["Install once"]
+    direction LR
+    src["skills/<br/>one canonical source"]
+    inst["Claude Code plugin,<br/>or install-skills.ps1<br/>for all four agents"]
+    src --> inst
+  end
+  task["Your task"]
+  rules["Project rules in AGENTS.md<br/>override the defaults"]
+  agent["Your coding agent<br/>Codex, Claude Code,<br/>OpenCode, Antigravity"]
+  wf["Workflow skill that fits<br/>analyze, plan, implement,<br/>review, test, debug, refactor"]
+  stack["Stack skills that apply<br/>.NET, Java, Go, Python,<br/>TypeScript, database, Dart"]
+  out["Analysis, plan, code and tests,<br/>review findings"]
+  task --> agent
+  install --> agent
+  rules --> agent
+  agent --> wf
+  agent --> stack
+  wf --> out
+  stack --> out
+```
+
 The collection has one canonical source under `skills/`:
 
 - Workflow skills define how to analyze, plan, implement, review, test, debug, and refactor.
