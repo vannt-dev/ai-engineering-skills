@@ -1353,3 +1353,6 @@ h2 em {
     animation: none!important
   }
 }
+
+/* JetBrains Mono joins --- and => into one glyph; show code exactly as written */
+html { font-variant-ligatures: no-contextual; }
