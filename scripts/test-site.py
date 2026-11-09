@@ -201,6 +201,31 @@ class SiteChecks(unittest.TestCase):
         for asset in ("styles.css", "app.js", "favicon.svg"):
             self.assertEqual(200, self.page.request.get(self.url + asset).status)
 
+    def test_fonts_are_self_hosted(self) -> None:
+        context = self.browser.new_context()
+        try:
+            page = context.new_page()
+            requests: list[str] = []
+            page.on("request", lambda request: requests.append(request.url))
+            page.goto(self.url, wait_until="networkidle")
+            self.assertEqual([], [url for url in requests if not url.startswith(self.url)])
+            self.assertTrue(
+                page.evaluate(
+                    """async () => {
+                      await document.fonts.ready;
+                      return document.fonts.check('16px "Be Vietnam Pro"')
+                        && document.fonts.check('16px "JetBrains Mono"');
+                    }"""
+                )
+            )
+            loaded = page.evaluate(
+                "[...document.fonts].filter(f => f.status === 'loaded').map(f => f.family)"
+            )
+            self.assertIn("Be Vietnam Pro", loaded)
+            self.assertIn("JetBrains Mono", loaded)
+        finally:
+            context.close()
+
     def test_content_works_without_javascript(self) -> None:
         context = self.browser.new_context(java_script_enabled=False)
         try:
