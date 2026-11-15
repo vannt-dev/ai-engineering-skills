@@ -273,15 +273,18 @@ receipt_reader='
   { text = text $0 "\n" }
   END {
     gsub(/\r/, "", text)
-    sub(/^\357\273\277/, "", text)
+    if (substr(text, 1, 3) == "\357\273\277") text = substr(text, 4)
     sub(/^[ \t\n]+/, "", text)
     sub(/[ \t\n]+$/, "", text)
-    if (text !~ /^[{]/ || text !~ /[}]$/) exit 10
+    if (substr(text, 1, 1) != "{" || substr(text, length(text), 1) != "}") exit 10
     if (!match(text, /"collection"[ \t\n]*:[ \t\n]*"ai-engineering-skills"/)) exit 11
-    if (!match(text, /"skills"[ \t\n]*:[ \t\n]*\[[^]]*\]/)) exit 12
-    body = substr(text, RSTART, RLENGTH)
-    sub(/^[^[]*\[/, "", body)
-    sub(/\]$/, "", body)
+    # Plain string functions find the braces and the end of the list: awk versions disagree
+    # about brackets inside a bracket expression.
+    if (!match(text, /"skills"[ \t\n]*:[ \t\n]*\[/)) exit 12
+    body = substr(text, RSTART + RLENGTH)
+    list_end = index(body, "]")
+    if (list_end == 0) exit 12
+    body = substr(body, 1, list_end - 1)
     sub(/^[ \t\n]+/, "", body)
     sub(/[ \t\n]+$/, "", body)
     if (body == "") exit 0
