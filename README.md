@@ -191,20 +191,20 @@ without a marketplace.
 
 <!-- x-release-please-start-version -->
 
-Download the [1.5.0 release][release]
+Download the [1.6.0 release][release]
 and extract it, or check out the versioned source:
 
 ```bash
-git clone --branch v1.5.0 --depth 1 https://github.com/vannt-dev/ai-engineering-skills.git
+git clone --branch v1.6.0 --depth 1 https://github.com/vannt-dev/ai-engineering-skills.git
 cd ai-engineering-skills
 ```
 
 Run the commands below from the extracted collection directory. For an existing managed
 installation, run the installer from this version with `-Overwrite`; preview first with `-WhatIf`
 (`--overwrite` and `--dry-run` for the shell script).
-The receipt records version 1.5.0. Unrelated skills are preserved.
+The receipt records version 1.6.0. Unrelated skills are preserved.
 
-[release]: https://github.com/vannt-dev/ai-engineering-skills/releases/tag/v1.5.0
+[release]: https://github.com/vannt-dev/ai-engineering-skills/releases/tag/v1.6.0
 
 <!-- x-release-please-end -->
 
