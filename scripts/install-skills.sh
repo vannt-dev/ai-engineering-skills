@@ -278,8 +278,6 @@ receipt_reader='
     sub(/[ \t\n]+$/, "", text)
     if (substr(text, 1, 1) != "{" || substr(text, length(text), 1) != "}") exit 10
     if (!match(text, /"collection"[ \t\n]*:[ \t\n]*"ai-engineering-skills"/)) exit 11
-    # Plain string functions find the braces and the end of the list: awk versions disagree
-    # about brackets inside a bracket expression.
     if (!match(text, /"skills"[ \t\n]*:[ \t\n]*\[/)) exit 12
     body = substr(text, RSTART + RLENGTH)
     list_end = index(body, "]")
@@ -288,6 +286,9 @@ receipt_reader='
     sub(/^[ \t\n]+/, "", body)
     sub(/[ \t\n]+$/, "", body)
     if (body == "") exit 0
+    # The awk of macOS splits at every line break as well as at the separator, so the line
+    # breaks go first.
+    gsub(/\n/, " ", body)
     count = split(body, items, ",")
     names = ""
     for (i = 1; i <= count; i++) {
