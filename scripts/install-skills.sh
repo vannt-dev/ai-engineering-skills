@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 # Installs the skill collection on macOS and Linux without PowerShell.
 # The counterpart of install-skills.ps1: same destinations, receipt, collision rules and rollback.
-# POSIX sh only (dash, bash 3.2 and later, busybox ash); needs awk, cp, mv, rm, mkdir, date, mktemp.
+# POSIX sh only, tested with dash and with bash 3.2 and later; needs awk, cp, mv, rm, mkdir, date, mktemp.
 set -eu
 
 collection="ai-engineering-skills"

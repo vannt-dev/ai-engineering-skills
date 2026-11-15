@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 # Removes an installation made by install-skills.sh or install-skills.ps1 on macOS and Linux.
 # The counterpart of uninstall-skills.ps1: it removes only paths named by a valid collection receipt.
-# POSIX sh only (dash, bash 3.2 and later, busybox ash); needs awk, mv, rm, date.
+# POSIX sh only, tested with dash and with bash 3.2 and later; needs awk, mv, rm, date.
 set -eu
 
 collection="ai-engineering-skills"

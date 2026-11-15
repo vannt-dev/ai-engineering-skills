@@ -212,7 +212,8 @@ There are two installers with the same behaviour. On Windows use `scripts/instal
 (Windows PowerShell 5.1 or PowerShell 7; it also runs on macOS and Linux where `pwsh` is installed).
 On macOS and Linux use `scripts/install-skills.sh`, which needs no PowerShell: it is a POSIX `sh`
 script that uses only `awk` and the standard file tools. Both write the same receipt, so either one
-can update or remove an installation the other made.
+can update or remove an installation the other made. The shell scripts are not part of release
+1.5.0 or earlier; where a release lacks them, clone the current source as shown below.
 
 | PowerShell | Shell | Meaning |
 | --- | --- | --- |
