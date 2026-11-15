@@ -21,7 +21,7 @@ Keep changes scoped to the skill's own guidance. Do not introduce repository-spe
 git diff --check
 ```
 
-All four must pass with no errors before a change is committed. CI runs the PowerShell checks on Windows, Linux, and macOS. A separate scheduled/manual workflow smoke-tests the latest supported consumer CLIs.
+All four must pass with no errors before a change is committed. After a change to an install or uninstall script, also run `sh scripts/test-install-sh.sh` (in Git Bash on Windows); the PowerShell and shell installers must keep the same behaviour, so change both together. CI runs the PowerShell checks on Windows, Linux, and macOS. A separate scheduled/manual workflow smoke-tests the latest supported consumer CLIs.
 
 For changes to `site/`, also run `python scripts/test-site.py` after installing Playwright and
 Chromium as documented in the README. Keep the catalog aligned with `skillset.json`; the browser

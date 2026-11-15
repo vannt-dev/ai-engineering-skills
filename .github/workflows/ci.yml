@@ -17,7 +17,7 @@ jobs:
   script:
     uses: vannt-dev/repokeeper/.github/workflows/stack-script.yml@v0
     with:
-      shell-scripts: "false"
+      shell-scripts: "true"
       powershell-scripts: "true"
       test-command: ""
   result:
