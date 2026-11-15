@@ -34,3 +34,18 @@ jobs:
       - name: Test installer tooling
         shell: pwsh
         run: ./scripts/test-tooling.ps1
+
+  posix-installer:
+    # The shell installer is for macOS and Linux, so unlike the job above this one runs on macOS
+    # for every pull request; it takes well under a minute.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Test the shell installer under sh, bash and dash, and against the PowerShell installer
+        run: sh scripts/test-install-sh.sh

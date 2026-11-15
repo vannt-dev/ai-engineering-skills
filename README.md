@@ -15,7 +15,7 @@ flowchart TB
   subgraph install["Install once"]
     direction LR
     src["skills/<br/>one canonical source"]
-    inst["Claude Code plugin,<br/>or install-skills.ps1<br/>for all four agents"]
+    inst["Claude Code plugin,<br/>or an install script<br/>for all four agents"]
     src --> inst
   end
   task["Your task"]
@@ -99,7 +99,7 @@ What the collection was checked against on 23 October 2026, on Windows, during t
 
 "Skills found" is what the tool lists at start: the `skills` of Claude Code's init event, `opencode-cli debug skill` for OpenCode. `agy` lists no skills at start, and the Codex list was not counted; both were checked by use instead: each opened `shortcut-ledger` from `.agents/skills`, ran its search and gave the expected ledger row.
 
-Up to 1.3.0 the installer put the Claude Code copy in a nested folder, `.claude/skills/ai-engineering-skills`, which Claude Code does not load. Run this version with `-Overwrite` to replace it with the flat layout.
+Up to 1.3.0 the installer put the Claude Code copy in a nested folder, `.claude/skills/ai-engineering-skills`, which Claude Code does not load. Run this version with `-Overwrite` (`--overwrite` for the shell script) to replace it with the flat layout.
 
 The repository contains `.codex-plugin/plugin.json` and `.claude-plugin/plugin.json` so it can also be packaged natively for Codex or Claude Code, and `.claude-plugin/marketplace.json` so Claude Code can [install it as a plugin](#install-in-claude-code) straight from GitHub.
 
@@ -109,6 +109,14 @@ The repository contains `.codex-plugin/plugin.json` and `.claude-plugin/plugin.j
 .\scripts\validate-skills.ps1
 .\scripts\validate-evals.ps1
 .\scripts\test-tooling.ps1
+```
+
+The shell installer has its own test. It works in throwaway folders, runs under each of `sh`, `bash`
+and `dash` that is installed, and compares the result with the PowerShell installer when `pwsh` or
+`powershell` is there:
+
+```sh
+sh scripts/test-install-sh.sh
 ```
 
 The validators have no Python or third-party module dependency. They validate the intentionally restricted portable frontmatter schema, optional Codex UI metadata, reference links, collection manifest, duplicate names, plugin manifests, the Claude Code marketplace, published JSON Schemas, and behavioral eval fixture structure.
@@ -173,12 +181,12 @@ later one line does both:
 
 All 18 skills load as `ai-engineering-skills:<skill>`. `/plugin update ai-engineering-skills@ai-engineering-skills`
 picks up a new release and `/plugin uninstall ai-engineering-skills@ai-engineering-skills` removes it.
-If you installed the collection for Claude Code with the PowerShell installer before, remove that
+If you installed the collection for Claude Code with an install script before, remove that
 copy with the uninstaller below so the skills are not loaded twice.
 
-### Install with the PowerShell installer
+### Install with an install script
 
-Use the installer for Codex, OpenCode and Antigravity, for project scope, or for Claude Code
+Use an install script for Codex, OpenCode and Antigravity, for project scope, or for Claude Code
 without a marketplace.
 
 <!-- x-release-please-start-version -->
@@ -192,12 +200,31 @@ cd ai-engineering-skills
 ```
 
 Run the commands below from the extracted collection directory. For an existing managed
-installation, run the installer from this version with `-Overwrite`; preview first with `-WhatIf`.
+installation, run the installer from this version with `-Overwrite`; preview first with `-WhatIf`
+(`--overwrite` and `--dry-run` for the shell script).
 The receipt records version 1.5.0. Unrelated skills are preserved.
 
 [release]: https://github.com/vannt-dev/ai-engineering-skills/releases/tag/v1.5.0
 
 <!-- x-release-please-end -->
+
+There are two installers with the same behaviour. On Windows use `scripts/install-skills.ps1`
+(Windows PowerShell 5.1 or PowerShell 7; it also runs on macOS and Linux where `pwsh` is installed).
+On macOS and Linux use `scripts/install-skills.sh`, which needs no PowerShell: it is a POSIX `sh`
+script that uses only `awk` and the standard file tools. Both write the same receipt, so either one
+can update or remove an installation the other made.
+
+| PowerShell | Shell | Meaning |
+| --- | --- | --- |
+| `-Target Universal` | `--target universal` | `codex`, `claude`, `opencode`, `antigravity` or `universal` (the default) |
+| `-Scope User` | `--scope user` | `user` (the default) or `project` |
+| `-ProjectRoot <path>` | `--project-root <path>` | the project to install into; required for project scope |
+| `-UserHome <path>` | `--user-home <path>` | a home directory other than your own |
+| `-Overwrite` | `--overwrite` | replace an installation identified by a receipt |
+| `-ForceOverwriteUnmanaged` | `--force-overwrite-unmanaged` | with overwrite, also replace colliding paths that have no receipt |
+| `-WhatIf` | `--dry-run` | list the changes and make none |
+
+`sh scripts/install-skills.sh --help` prints the options.
 
 Preview a user-level Universal installation:
 
@@ -205,10 +232,18 @@ Preview a user-level Universal installation:
 .\scripts\install-skills.ps1 -Target Universal -Scope User -WhatIf
 ```
 
+```sh
+sh scripts/install-skills.sh --target universal --scope user --dry-run
+```
+
 Install for all supported products:
 
 ```powershell
 .\scripts\install-skills.ps1 -Target Universal -Scope User
+```
+
+```sh
+sh scripts/install-skills.sh --target universal --scope user
 ```
 
 Install for one product:
@@ -220,11 +255,34 @@ Install for one product:
 .\scripts\install-skills.ps1 -Target Antigravity -Scope User
 ```
 
+```sh
+sh scripts/install-skills.sh --target codex --scope user
+sh scripts/install-skills.sh --target claude --scope user
+sh scripts/install-skills.sh --target opencode --scope user
+sh scripts/install-skills.sh --target antigravity --scope user
+```
+
 For project scope, provide the repository root:
 
 ```powershell
 .\scripts\install-skills.ps1 -Target Universal -Scope Project -ProjectRoot C:\src\my-project
 ```
+
+```sh
+sh scripts/install-skills.sh --target universal --scope project --project-root ~/src/my-project
+```
+
+On macOS or Linux, the whole installation from a fresh clone of the current source is:
+
+```sh
+git clone --depth 1 https://github.com/vannt-dev/ai-engineering-skills.git
+cd ai-engineering-skills
+sh scripts/install-skills.sh --target universal --scope user
+```
+
+The PowerShell installer runs `validate-skills.ps1` on the collection first. The shell installer
+cannot, so it checks only what it copies: every skill named in `skillset.json` has a safe, unique
+name and a `SKILL.md`. Released versions are validated in CI before they are published.
 
 The installer validates and stages the complete collection before copying. It refuses to mix with an existing installation unless `-Overwrite` is supplied. `-Overwrite` replaces only directories identified by an `.ai-engineering-skills.receipt.json` receipt, removes stale files and receipt-owned skills no longer present in the manifest, and writes a new receipt with the installed version. All destinations are committed as one transaction; an error restores the previous installation.
 
@@ -232,6 +290,10 @@ To replace a colliding path that has no valid collection receipt, inspect it fir
 
 ```powershell
 .\scripts\install-skills.ps1 -Target Codex -Scope Project -ProjectRoot C:\src\my-project -Overwrite -ForceOverwriteUnmanaged
+```
+
+```sh
+sh scripts/install-skills.sh --target codex --scope project --project-root ~/src/my-project --overwrite --force-overwrite-unmanaged
 ```
 
 Version 1.0.0 moved Antigravity user installs from `.gemini/antigravity/skills` to the [current global location](https://codelabs.developers.google.com/getting-started-with-antigravity-skills), `.gemini/config/skills`. Re-running an existing managed Antigravity or Universal user installation with `-Overwrite` migrates only the skill directories listed in its legacy receipt and preserves unrelated directories.
@@ -245,7 +307,12 @@ Preview or remove a receipt-managed installation:
 .\scripts\uninstall-skills.ps1 -Target Universal -Scope User
 ```
 
-Project scope accepts the same `-ProjectRoot` argument as the installer. The uninstaller refuses malformed receipts, removes only paths named by a valid collection receipt, preserves unrelated skills, and rolls back if it cannot move every managed path into quarantine.
+```sh
+sh scripts/uninstall-skills.sh --target universal --scope user --dry-run
+sh scripts/uninstall-skills.sh --target universal --scope user
+```
+
+Project scope accepts the same `-ProjectRoot` (`--project-root`) argument as the installer. The uninstaller refuses malformed receipts, removes only paths named by a valid collection receipt, preserves unrelated skills, and rolls back if it cannot move every managed path into quarantine.
 
 The scheduled `consumer-smoke.yml` workflow installs the latest Codex, Claude Code, OpenCode stable/V2, and Antigravity CLIs in isolated jobs. It verifies supported discovery layouts and runs each CLI's version check; Claude additionally validates the installed plugin in strict mode.
 
